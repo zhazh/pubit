@@ -15,6 +15,7 @@ from flask_wtf.csrf import CSRFError
 from .settings import config
 from .extensions import (db, login_manager, migrate, csrf)
 from .blueprints import user_bp, pub_bp
+from .models import User
 
 basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
@@ -70,12 +71,20 @@ def register_blueprints(app):
 
 def register_commands(app):
     @app.cli.command()
-    @click.option('--drop', is_flag=True, help='Create after drop.')
-    def initdb(drop):
-        """ Initialize the database. """
-        if drop:
-            click.confirm('This operation will delete the database, do you want to continue?', abort=True)
-            db.drop_all()
-            click.echo('Drop tables.')
+    def init():
+        """ Initialize database and default user """
         db.create_all()
         click.echo("Initialized database.")
+        _name = "admin"
+        _password = "admin"
+        admin = User.query.filter(User.name == _name).first()
+        if admin is None:
+            admin = User(name=_name, password=_password)
+            db.session.add(admin)
+            click.echo("Created user '%s', password:'%s'"%(_name, _password))
+        else:
+            admin.name = _name
+            admin.set_password(_password)
+            click.echo("Updating the user '%s', password:'%s'"%(_name, _password))
+        db.session.commit()
+        click.echo("Done.")
