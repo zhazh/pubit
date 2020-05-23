@@ -14,8 +14,7 @@ from flask import Flask, render_template, request
 from flask_wtf.csrf import CSRFError
 from .settings import config
 from .extensions import (db, login_manager, migrate, csrf)
-from .blueprints import user_bp, pub_bp
-from .models import User
+from .blueprints import admin_bp, pub_bp
 
 basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
@@ -51,7 +50,7 @@ def register_extensions(app):
 def register_template_context(app):
     @app.context_processor
     def make_template_context():
-        return dict(Brand=app.config['BRAND'])
+        return dict(BRAND=app.config['BRAND'])
 
 def register_errors(app):
     @app.errorhandler(404)
@@ -66,8 +65,8 @@ def register_errors(app):
         return render_template('errors/error.html', error=e), 400
     
 def register_blueprints(app):
-    app.register_blueprint(user_bp)
     app.register_blueprint(pub_bp, url_prefix='/pub')
+    app.register_blueprint(admin_bp, url_prefix='/admin')
 
 def register_commands(app):
     @app.cli.command()
@@ -75,16 +74,4 @@ def register_commands(app):
         """ Initialize database and default user """
         db.create_all()
         click.echo("Initialized database.")
-        _name = "admin"
-        _password = "admin"
-        admin = User.query.filter(User.name == _name).first()
-        if admin is None:
-            admin = User(name=_name, password=_password)
-            db.session.add(admin)
-            click.echo("Created user '%s', password:'%s'"%(_name, _password))
-        else:
-            admin.name = _name
-            admin.set_password(_password)
-            click.echo("Updating the user '%s', password:'%s'"%(_name, _password))
-        db.session.commit()
         click.echo("Done.")

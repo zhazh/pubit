@@ -20,6 +20,8 @@ class BaseConfig(object):
     SECRET_KEY = os.getenv("SECRET_KEY", "2c4dba7087374b5d8a1b91c5dbd46099")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # app defined.
+    ADMIN_NAME = os.getenv('ADMIN_NAME')
+    ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
     BRAND = os.getenv("BRAND", "Pubit")
 
 class DevelopmentConfig(BaseConfig):

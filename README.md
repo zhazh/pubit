@@ -26,7 +26,9 @@ Windows:
 
 Create .env file in project root directory, in linux you can do this like:
 ```
-$ cat 'SECRET_KEY=536f8c98b8f440809cf709fa731c90e6' > .env
+$ cat > .env << EOF
+> SECRET_KEY=536f8c98b8f440809cf709fa731c90e6
+> EOF
 ```
 
 ## Run

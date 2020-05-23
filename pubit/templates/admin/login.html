@@ -1,9 +1,9 @@
-{% extends 'user/_base.html' %}
+{% extends 'base.html' %}
 
 {% block main %}
 <div></div>
 <div class="login">
-	<form name="login" action="{{url_for('user.login')}}" method="POST">
+	<form name="login" action="{{url_for('admin.login')}}" method="POST">
 		{{form.hidden_tag()}}
 		<h3 class="font-weight-normal text-center">Sign In</h3>
 		<div class="form-group">
@@ -17,12 +17,6 @@
 			{% for error in form.password.errors %}
 			  <label class="error">{{error}}</label>
 			{% endfor %}
-		</div>
-		<div class="checkbox">
-			<label class="form-group">
-				{{form.remember_me}}
-				{{form.remember_me.label}}
-			</label>
 		</div>
 		{{form.submit(class='btn btn-primary btn-block')}}
 	</form>
