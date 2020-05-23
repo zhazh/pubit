@@ -13,7 +13,6 @@ html body {
 }
 
 .main > div:first-child {
-	padding: 10px 15px;
 	overflow: auto;
 	transition: width 500ms;
 }

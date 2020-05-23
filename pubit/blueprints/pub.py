@@ -13,7 +13,7 @@ pub_bp = Blueprint('pub', __name__)
 
 @pub_bp.route('/')
 def index():
-    return 'Index of Pubs.'
+    return render_template('pub/index.html')
 
 @pub_bp.route('/<uuid>')
 def pub(uuid):

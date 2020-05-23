@@ -11,15 +11,31 @@
 	<link href="{{url_for('static', filename='app/1.0.0/css/style.css')}}" rel="stylesheet">
 </head> 
 <body>
-{% include '_nav.html' %}
-<div class="main">
+	<nav class="navbar navbar-inverse navbar-fixed-top">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+					<span class="sr-only">Toggle navigation</span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="{{url_for('home.index')}}">{{BRAND}}</a>
+			</div>
+			<div id="navbar" class="navbar-collapse collapse">
+				{% block nav_menu %}
+				{% endblock %}
+			</div><!--/.navbar-collapse -->
+		</div>
+	</nav>
+	<div class="main">
 	{% block main %}
 	{% endblock %}
-</div>
-<script src="{{url_for('static', filename='jquery/1.12.4/jquery.min.js')}}"></script>
-<script src="{{url_for('static', filename='bootstrap/3.3.7/js/bootstrap.min.js')}}"></script>
-<script src="{{url_for('static', filename='jquery.validate/1.17.0/jquery.validate.min.js')}}"></script>
-<script src="{{url_for('static', filename='jstree/3.3.9/jstree.min.js')}}"></script>
-<script src="{{url_for('static', filename='app/1.0.0/js/app.js')}}"></script>
+	</div>
+	<script src="{{url_for('static', filename='jquery/1.12.4/jquery.min.js')}}"></script>
+	<script src="{{url_for('static', filename='bootstrap/3.3.7/js/bootstrap.min.js')}}"></script>
+	<script src="{{url_for('static', filename='jquery.validate/1.17.0/jquery.validate.min.js')}}"></script>
+	<script src="{{url_for('static', filename='jstree/3.3.9/jstree.min.js')}}"></script>
+	<script src="{{url_for('static', filename='app/1.0.0/js/app.js')}}"></script>
 </body>
 </html>

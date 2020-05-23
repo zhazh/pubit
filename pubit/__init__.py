@@ -14,7 +14,7 @@ from flask import Flask, render_template, request
 from flask_wtf.csrf import CSRFError
 from .settings import config
 from .extensions import (db, login_manager, migrate, csrf)
-from .blueprints import admin_bp, pub_bp
+from .blueprints import home_bp, admin_bp, pub_bp
 
 basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
@@ -65,6 +65,7 @@ def register_errors(app):
         return render_template('errors/error.html', error=e), 400
     
 def register_blueprints(app):
+    app.register_blueprint(home_bp)
     app.register_blueprint(pub_bp, url_prefix='/pub')
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
