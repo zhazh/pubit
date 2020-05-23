@@ -23,6 +23,7 @@ class BaseConfig(object):
     ADMIN_NAME = os.getenv('ADMIN_NAME')
     ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
     BRAND = os.getenv("BRAND", "Pubit")
+    ADMIN_HOME = os.getenv("ADMIN_HOME", os.path.expanduser("~"))
 
 class DevelopmentConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = _prefix + os.path.join(_basedir, "data-dev.db")

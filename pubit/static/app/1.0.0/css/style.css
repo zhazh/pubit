@@ -24,8 +24,19 @@ html body {
 }
 
 .sidebar {
-	background-color: #555;
+	padding: 10px 0;
+	background-color: #ccc;
+	border-right: 1px solid #aaa;
 	width: 260px;
+}
+
+.sidebar ul li {
+	list-style:none;
+	padding: 5px 0;
+}
+
+.sidebar ul li a {
+	text-decoration: none;
 }
 
 form[name=login] {
@@ -41,6 +52,11 @@ form[name=login] {
 
 form[name=login] input[type=text] {
 	margin: 10px 0;
+}
+
+form[name=new-pubitem] {
+	margin: auto;
+	width: 400px;
 }
 
 /* for pad or mobile. */

@@ -1,10 +1,44 @@
 {% extends 'base.html' %}
+{% block nav_menu %}
+{% include 'admin/_nav.html' %}
+{% endblock %}
 
 {% block main %}
-<div class="sidebar">
-    Sidebar
-</div>
+{% include 'admin/_sidebar.html'%}
 <div class="main-content">
-    Home Page.
+    <h4>Pub folder list.</h4>
+    <table class="table">
+        <tr>
+            <td>No</td>
+            <td>Pub Time</td>
+            <td>Name</td>
+            <td>Password</td>
+            <td>Description</td>
+            <td>Path</td>
+            <td>Is public</td>
+            <td>Allow upload</td>
+            <td>Operation</td>
+        </tr>
+        {% for pub in pubs %}
+        {% if pub.is_public %}
+        <tr>
+        {% else %}
+        <tr class="danger">
+        {% endif %}
+            <td>No</td>
+            <td>{{pub.pubtime}}</td>
+            <td>{{pub.name}}</td>
+            <td>{{pub.password}}</td>
+            <td>{{pub.description}}</td>
+            <td>{{pub.path}}</td>
+            <td>{{pub.is_public}}</td>
+            <td>{{pub.allow_upload}}</td>
+            <td>
+                <button class="btn btn-small">Delete</button>
+                <button class="btn btn-small">Change password</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
 </div>
 {% endblock %}

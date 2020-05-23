@@ -16,9 +16,9 @@ class Pubitem(db.Model):
     uuid = db.Column(db.String(32), index=True, unique=True)
     name = db.Column(db.String(20))
     description = db.Column(db.String(512))
-    created = db.Column(db.DateTime, default=datetime.now)
+    pubtime = db.Column(db.DateTime, default=datetime.now)
     path = db.Column(db.String(512))
     password = db.Column(db.String(20), default=None)
-    is_valid = db.Column(db.Boolean, default=True)
+    is_public = db.Column(db.Boolean, default=True)
     allow_upload = db.Column(db.Boolean, default=False)
 
