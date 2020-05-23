@@ -2,9 +2,9 @@
 """
 .blueprints
 ====================================
-user_bp:    user action.
+admin_bp:   administrator action.
 pub_bp:     public resource action.
 """
 
-from .user import user_bp
+from .admin import admin_bp
 from .pub import pub_bp

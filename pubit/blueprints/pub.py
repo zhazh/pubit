@@ -15,4 +15,8 @@ pub_bp = Blueprint('pub', __name__)
 def index():
     return 'Index of Pubs.'
 
+@pub_bp.route('/<uuid>')
+def pub(uuid):
+    return 'Pub %s'%uuid
+
 
