@@ -16,35 +16,37 @@
 
 <div class="main-content">
     <h4>Published folders.</h4>
-    <table class="table">
+    <table class="table table-bordered">
         <tr>
-            <td>No</td>
+            <td>#</td>
             <td>Pub Time</td>
+            <td>Access</td>
             <td>Name</td>
             <td>Password</td>
             <td>Description</td>
+            <td>Base directory</td>
             <td>Path</td>
-            <td>Is public</td>
             <td>Allow upload</td>
             <td>Operation</td>
         </tr>
         {% for pub in pubs %}
         {% if pub.is_public %}
-        <tr>
+        <tr class="success">
         {% else %}
         <tr class="danger">
         {% endif %}
-            <td>No</td>
-            <td>{{pub.pubtime}}</td>
+            <td>{{loop.index}}</td>
+            <td>{{pub.standard_pubtime}}</td>
+            <td>{{pub.access}}</td>
             <td>{{pub.name}}</td>
             <td>{{pub.password}}</td>
             <td>{{pub.description}}</td>
+            <td>{{pub.base_dir}}</td>
             <td>{{pub.path}}</td>
-            <td>{{pub.is_public}}</td>
             <td>{{pub.allow_upload}}</td>
             <td>
-                <button class="btn btn-small">Delete</button>
-                <button class="btn btn-small">Change password</button>
+                <button class="btn btn-danger btn-xs">Delete</button>
+                <button class="btn btn-info btn-xs">Change password</button>
             </td>
         </tr>
         {% endfor %}
@@ -62,7 +64,7 @@
                     <form name="create-pubitem">
                         <div class="form-group">
                             <label for="pubname">Pub name</label>
-                            <input id="pubname" name="pubname" type="text" class="form-control" placeholder="Pub name">
+                            <input id="pubname" name="name" type="text" class="form-control" placeholder="Pub name">
                         </div>
 
                         <div class="form-group">
@@ -72,28 +74,39 @@
 
                         <div class="form-group">
                             <label for="path">Pub directory</label>
-                            <input id="path" name="path" type="text" class="form-control" placeholder="Pub directory" readonly>
+                            <input id="path" name="path" type="text" class="form-control" placeholder="Pub directory" value="/" readonly>
                         </div>
-                        <div id="newpub-jstree">Directory tree.</div>
+                        <div id="newpub-jstree" class="modal-jstree">
+                            Directory tree.
+                        </div>
 
-                        <div class="form-group">
+                        <div class="radio">
+                            Pub access: 
+                            <label>
+                                <input type="radio" name="access" value="public" checked> Public
+                            </label>
+                            <label>
+                                <input type="radio" name="access" value="protected"> Protected
+                            </label>
+                        </div>
+
+                        <div class="form-group password disappear">
                             <label for="password">Password</label>
                             <input id="password" name="password" type="password" class="form-control" placeholder="Password">
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group password disappear">
                             <label for="confirm_password">Confirm password</label>
                             <input id="confirm_password" name="confirm_password" type="password" class="form-control" placeholder="Input password again">
                         </div>
-                    
-                        <div class="checkbox">
+
+                        <div class="radio">
+                            Allow upload: 
                             <label>
-                                <input name="is_public" type="checkbox"> Public
+                                <input type="radio" name="allow_upload" value="yes"> Yes
                             </label>
-                        </div>
-                        <div class="checkbox">
                             <label>
-                                <input name="allow_upload" type="checkbox"> Allow upload
+                                <input type="radio" name="allow_upload" value="no" checked> No
                             </label>
                         </div>
                         <button type="submit" class="btn btn-default">Publish</button>
@@ -119,7 +132,50 @@
             $("input[name='path']").val(url);
         });
 
-        $("input[name='is_public']").click(function(){
+        $("input[name='access']").click(function(){
+            console.log($(this).val());
+            if ($(this).val() === 'public') {
+                $("div.password").addClass("disappear");
+                $("#password").attr("disabled", true);
+                $("#confirm_password").attr("disabled", true);
+            } else {
+                $("div.password").removeClass("disappear");
+                $("#password").attr("disabled", false);
+                $("#confirm_password").attr("disabled", false);
+            }
+        });
+
+        $("form[name='create-pubitem']").validate({
+            rules: {
+                name: "required",
+                path: "required",
+            },
+            messages: {
+                name: "Empty pub name.",
+                path: "Path required.",
+            }
+        });
+
+        $("form[name='create-pubitem']").submit(function(e){
+            if (!$(this).valid()) {
+                e.preventDefault();
+                return;
+            }
+
+            $.post("{{url_for('admin.new_pub')}}", 
+                    $(this).serialize(), 
+                    function(data) {
+                        if (data.code == 0) {
+                            alert("Publish an folder success.");
+                            window.location.reload();
+                        } else {
+                            alert("Create new user occurred an error:" + data.msg);
+                        }
+                    }, "json"
+            );
+            $("#pub-folder").modal('hide');
+            e.preventDefault();
+            $(this)[0].reset();
         });
     });
 </script>
