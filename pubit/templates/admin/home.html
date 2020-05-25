@@ -1,12 +1,21 @@
 {% extends 'base.html' %}
+
 {% block nav_menu %}
 {% include 'admin/_nav.html' %}
 {% endblock %}
 
 {% block main %}
-{% include 'admin/_sidebar.html'%}
+<div class="sidebar">
+    <ul class="nav nav-pills nav-stacked">
+        <li class="active">
+            <a href="{{url_for('admin.home')}}">Home</a>
+        </li>
+        <li><a href="#pub-folder" data-toggle="modal" data-target="#pub-folder">Pub folder now!</a></li>
+    </ul>
+</div>
+
 <div class="main-content">
-    <h4>Pub folder list.</h4>
+    <h4>Published folders.</h4>
     <table class="table">
         <tr>
             <td>No</td>
@@ -40,5 +49,78 @@
         </tr>
         {% endfor %}
     </table>
+
+    <!-- Pub folder modal -->
+    <div id="pub-folder" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Publish an local folder.</h4>
+                </div>
+                <div class="modal-body">
+                    <form name="create-pubitem">
+                        <div class="form-group">
+                            <label for="pubname">Pub name</label>
+                            <input id="pubname" name="pubname" type="text" class="form-control" placeholder="Pub name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Pub description</label>
+                            <input id="description" name="description" type="textarea" class="form-control" placeholder="Pub description">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="path">Pub directory</label>
+                            <input id="path" name="path" type="text" class="form-control" placeholder="Pub directory" readonly>
+                        </div>
+                        <div id="newpub-jstree">Directory tree.</div>
+
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input id="password" name="password" type="password" class="form-control" placeholder="Password">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirm_password">Confirm password</label>
+                            <input id="confirm_password" name="confirm_password" type="password" class="form-control" placeholder="Input password again">
+                        </div>
+                    
+                        <div class="checkbox">
+                            <label>
+                                <input name="is_public" type="checkbox"> Public
+                            </label>
+                        </div>
+                        <div class="checkbox">
+                            <label>
+                                <input name="allow_upload" type="checkbox"> Allow upload
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-default">Publish</button>
+                    </form>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 </div>
+{% endblock %}
+
+{% block script %}
+<script>
+    $(document).ready(function(){
+        // jstree node.
+        $('#newpub-jstree').jstree({ 'core' : {
+                'data' : {'asyn':true, 'url':"{{url_for('admin.dir_tree')}}"}
+            }
+        });
+    
+        $('#newpub-jstree').on("changed.jstree", function (e, data) {
+            url = data.selected[0];
+            $("input[name='path']").val(url);
+        });
+
+        $("input[name='is_public']").click(function(){
+        });
+    });
+</script>
 {% endblock %}

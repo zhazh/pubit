@@ -1,6 +1,6 @@
 # Pubit
 
-Flask app -  public your resources via web.
+Flask app -  public your folders with http.
 
 ## Installation
 
@@ -28,6 +28,8 @@ Create .env file in project root directory, in linux you can do this like:
 ```
 $ cat > .env << EOF
 > SECRET_KEY=536f8c98b8f440809cf709fa731c90e6
+> ADMIN_NAME=xxx
+> ADMIN_PASSWORD=xxx
 > EOF
 ```
 

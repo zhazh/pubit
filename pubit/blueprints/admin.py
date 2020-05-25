@@ -7,11 +7,12 @@ User manage actions.
 
 from flask import (
     Blueprint, render_template, redirect, url_for, request, 
-    current_app, session
+    current_app, session, jsonify
 )
 from pubit.forms import LoginForm, NewPubitemForm
 from pubit.decorators import admin_check, admin_authed, admin_login, admin_logout, admin_required
 from pubit.models import Pubitem
+from pubit.service import Node
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -43,10 +44,17 @@ def home():
     pubs = Pubitem.query.all()
     return render_template('admin/home.html', pubs=pubs)
 
-@admin_bp.route('/create')
-@admin_required
-def create():
-    form = NewPubitemForm()
-    if form.validate_on_submit():
-        pass
-    return render_template('admin/new.html', form=form)
+@admin_bp.route('/dir_tree', methods=['GET'])
+def dir_tree():
+    """ Response admin home directory list with json data.
+    """
+    try:
+        if not admin_authed():
+            # 403 forbidden.
+            return jsonify(dict(code=403, msg='Unauthenticated.')), 403
+        path = request.args.get('path', '/')
+        node = Node(path=path)
+        return jsonify(node.tree)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(dict(code=500, msg='Catch an exception.')), 500
