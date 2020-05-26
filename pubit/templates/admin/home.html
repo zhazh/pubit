@@ -39,14 +39,14 @@
             <td>{{pub.standard_pubtime}}</td>
             <td>{{pub.access}}</td>
             <td>{{pub.name}}</td>
-            <td>{{pub.password}}</td>
+            <td>{{pub.password or ''}}</td>
             <td>{{pub.description}}</td>
             <td>{{pub.base_dir}}</td>
             <td>{{pub.path}}</td>
             <td>{{pub.allow_upload}}</td>
             <td>
                 <button class="btn btn-danger btn-xs">Delete</button>
-                <button class="btn btn-info btn-xs">Change password</button>
+                <button class="btn btn-info btn-xs" data-toggle="modal" data-target="#modify-pub">Modify</button>
             </td>
         </tr>
         {% endfor %}
@@ -115,13 +115,74 @@
             </div><!-- /.modal-content -->
         </div><!-- /.modal-dialog -->
     </div><!-- /.modal -->
+
+    <div id="modify-pub" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Modify pub</h4>
+                </div>
+                <div class="modal-body">
+                    <form name="modify-pub">
+                        <input id="pubid" name="id" type="hidden" class="form-control" value="1">
+                        <div class="form-group">
+                            <label for="pubname">Pub name</label>
+                            <input id="pubname" name="name" type="text" class="form-control" placeholder="Pub name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Pub description</label>
+                            <input id="description" name="description" type="textarea" class="form-control" placeholder="Pub description">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="path">Pub directory</label>
+                            <input id="path" name="path" type="text" class="form-control" placeholder="Pub directory" value="/" readonly>
+                        </div>
+
+                        <div class="radio">
+                            Pub access: 
+                            <label>
+                                <input type="radio" name="access" value="public" checked> Public
+                            </label>
+                            <label>
+                                <input type="radio" name="access" value="protected"> Protected
+                            </label>
+                        </div>
+
+                        <div class="form-group password disappear">
+                            <label for="password">Password</label>
+                            <input id="password" name="password" type="password" class="form-control" placeholder="Password">
+                        </div>
+
+                        <div class="form-group password disappear">
+                            <label for="confirm_password">Confirm password</label>
+                            <input id="confirm_password" name="confirm_password" type="password" class="form-control" placeholder="Input password again">
+                        </div>
+
+                        <div class="radio">
+                            Allow upload: 
+                            <label>
+                                <input type="radio" name="allow_upload" value="yes"> Yes
+                            </label>
+                            <label>
+                                <input type="radio" name="allow_upload" value="no" checked> No
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-default">Save Changes</button>
+                    </form>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
 </div>
 {% endblock %}
 
 {% block script %}
 <script>
     $(document).ready(function(){
-        // jstree node.
+        // list server directories.
         $('#newpub-jstree').jstree({ 'core' : {
                 'data' : {'asyn':true, 'url':"{{url_for('admin.dir_tree')}}"}
             }
@@ -149,10 +210,25 @@
             rules: {
                 name: "required",
                 path: "required",
+                password: {
+                    required: true,
+                    rangelength: [5, 20],
+                },
+
+                confirm_password: {
+                    equalTo: '#password',
+                },
             },
             messages: {
                 name: "Empty pub name.",
                 path: "Path required.",
+                password: {
+                    required: 'Empty password.',
+                    rangelength: 'Length between 5 and 20.',
+                },
+                confirm_password: {
+                    equalTo: 'Not equal to password.',
+                },
             }
         });
 

@@ -3,7 +3,7 @@
 .decorators
 """
 from functools import wraps
-from flask import current_app, session, redirect, url_for
+from flask import current_app, session, redirect, url_for, jsonify
 
 def admin_check(name, password):
     admin_name = current_app.config.get('ADMIN_NAME')

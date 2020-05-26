@@ -9,6 +9,7 @@ from flask import (
     Blueprint, render_template, redirect, url_for, request, 
     current_app, session, jsonify
 )
+from sqlalchemy.exc import IntegrityError
 from pubit.forms import LoginForm, NewPubitemForm
 from pubit.decorators import admin_check, admin_authed, admin_login, admin_logout, admin_required
 from pubit.models import Pubitem
@@ -88,9 +89,11 @@ def new_pub():
             password = request.form.get("password") 
             confirm_password = request.form.get("confirm_password")
             if password is None or confirm_password is None:
-                return jsonify(dict(code=103, msg="Required argument 'password' and 'confirm_password'"))
+                return jsonify(dict(code=103, msg="Required argument 'password' and 'confirm_password'."))
+            if len(password) < 5 or len(password) > 20:
+                return jsonify(dict(code=104, msg="Argument 'password' length must between 5 and 20."))
             if password != confirm_password:
-                return jsonify(dict(code=104, msg="Argument 'confirm_password' not equal to 'password'"))
+                return jsonify(dict(code=105, msg="Argument 'confirm_password' not equal to 'password'."))
         
         allow_upload = request.form.get("allow_upload", "no")
         if allow_upload == 'yes':
@@ -106,6 +109,10 @@ def new_pub():
         db.session.add(pub)
         db.session.commit()
         return jsonify(dict(code=0, msg='Success'))
+    except IntegrityError as e:     # unique error.
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(dict(code=2, msg="Argument 'name' has existed.")), 500
     except Exception as e:
         current_app.logger.error('new_pub:%s'%str(e))
         db.session.rollback()

@@ -15,6 +15,7 @@ from flask_wtf.csrf import CSRFError
 from .settings import config
 from .extensions import (db, login_manager, migrate, csrf)
 from .blueprints import home_bp, admin_bp, pub_bp
+from .apis import api_bp
 
 basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
@@ -68,6 +69,8 @@ def register_blueprints(app):
     app.register_blueprint(home_bp)
     app.register_blueprint(pub_bp, url_prefix='/pub')
     app.register_blueprint(admin_bp, url_prefix='/admin')
+    app.register_blueprint(api_bp, url_prefix='/api')
+    #app.register_blueprint(api_bp, url_prefix='/api', subdomain='api')  # enable subdomain support
 
 def register_commands(app):
     @app.cli.command()
