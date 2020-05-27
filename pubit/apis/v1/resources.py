@@ -82,6 +82,7 @@ class PubAPI(MethodView):
 
             if request.form.get('access') == 'public':
                 pub.is_public = True
+                pub.password = None
             else:
                 password = request.form.get('password')
                 if password is None:

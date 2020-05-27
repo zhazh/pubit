@@ -10,7 +10,7 @@
         <li class="active">
             <a href="{{url_for('admin.home')}}">Home</a>
         </li>
-        <li><a href="#pub-folder" data-toggle="modal" data-target="#pub-folder">Pub folder now!</a></li>
+        <li><a href="#md-pub-create" data-toggle="modal" data-target="#md-pub-create">Pub folder now!</a></li>
     </ul>
 </div>
 
@@ -53,7 +53,7 @@
     </table>
 
     <!-- Pub folder modal -->
-    <div id="pub-folder" class="modal fade" tabindex="-1" role="dialog">
+    <div id="md-pub-create" name="pub-create" class="modal fade" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -61,22 +61,22 @@
                     <h4 class="modal-title">Publish an local folder.</h4>
                 </div>
                 <div class="modal-body">
-                    <form name="create-pubitem">
+                    <form name="pub-create">
                         <div class="form-group">
-                            <label for="pubname">Pub name</label>
-                            <input id="pubname" name="name" type="text" class="form-control" placeholder="Pub name">
+                            <label>Pub name</label>
+                            <input name="name" type="text" class="form-control" placeholder="Pub name">
                         </div>
 
                         <div class="form-group">
-                            <label for="description">Pub description</label>
-                            <input id="description" name="description" type="textarea" class="form-control" placeholder="Pub description">
+                            <label>Pub description</label>
+                            <input name="description" type="textarea" class="form-control" placeholder="Pub description">
                         </div>
 
                         <div class="form-group">
-                            <label for="path">Pub directory</label>
-                            <input id="path" name="path" type="text" class="form-control" placeholder="Pub directory" value="/" readonly>
+                            <label>Pub directory</label>
+                            <input name="path" type="text" class="form-control" placeholder="Pub directory" value="/" readonly>
                         </div>
-                        <div id="newpub-jstree" class="modal-jstree">
+                        <div name="pub-create-dir-select" class="modal-jstree">
                             Directory tree.
                         </div>
 
@@ -91,15 +91,10 @@
                         </div>
 
                         <div class="form-group password disappear">
-                            <label for="password">Password</label>
-                            <input id="password" name="password" type="password" class="form-control" placeholder="Password">
+                            <label>Password</label>
+                            <input name="password" type="text" class="form-control" placeholder="Password">
                         </div>
-
-                        <div class="form-group password disappear">
-                            <label for="confirm_password">Confirm password</label>
-                            <input id="confirm_password" name="confirm_password" type="password" class="form-control" placeholder="Input password again">
-                        </div>
-
+                        
                         <div class="radio">
                             Allow upload: 
                             <label>
@@ -117,7 +112,7 @@
     </div><!-- /.modal -->
 
     <!-- Modify an pub modal -->
-    <div id="pub-modify" class="modal fade" tabindex="-1" role="dialog"> <!-- pub-modify -->
+    <div id="md-pub-modify" name="pub-modify" class="modal fade" tabindex="-1" role="dialog"> <!-- pub-modify -->
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -125,45 +120,45 @@
                     <h4 class="modal-title">Modify pub</h4>
                 </div>
                 <div class="modal-body">
-                    <form name="modify-pub">
-                        <input id="modify-pubid" name="id" type="hidden" class="form-control">
+                    <form name="pub-modify">
+                        <input name="id" type="hidden" class="form-control">
                         <div class="form-group">
-                            <label for="modify-pubname">Pub name</label>
-                            <input id="modify-pubname" name="name" type="text" class="form-control" placeholder="Pub name">
+                            <label>Pub name</label>
+                            <input name="name" type="text" class="form-control" placeholder="Pub name">
                         </div>
 
                         <div class="form-group">
-                            <label for="modify-description">Pub description</label>
-                            <input id="modify-description" name="description" type="textarea" class="form-control" placeholder="Pub description">
+                            <label>Pub description</label>
+                            <input name="description" type="textarea" class="form-control" placeholder="Pub description">
                         </div>
 
                         <div class="form-group">
-                            <label for="modify-path">Pub directory</label>
-                            <input id="modify-path" name="path" type="text" class="form-control" placeholder="Pub directory" value="/" readonly>
+                            <label>Pub directory</label>
+                            <input name="path" type="text" class="form-control" placeholder="Pub directory" value="/" readonly>
                         </div>
 
                         <div class="radio">
                             Pub access: 
                             <label>
-                                <input id="modify-access-public" type="radio" name="modify-access" value="public" checked> Public
+                                <input type="radio" name="access" value="public" checked> Public
                             </label>
                             <label>
-                                <input id="modify-access-protected" type="radio" name="modify-access" value="protected"> Protected
+                                <input type="radio" name="access" value="protected"> Protected
                             </label>
                         </div>
 
-                        <div class="form-group modify-password disappear">
-                            <label for="modify-password">Password</label>
-                            <input id="modify-password" name="password" type="text" class="form-control" placeholder="Password">
+                        <div class="form-group password disappear">
+                            <label>Password</label>
+                            <input name="password" type="text" class="form-control" placeholder="Password">
                         </div>
 
                         <div class="radio">
                             Allow upload: 
                             <label>
-                                <input id="modify-allow-upload" type="radio" name="allow_upload" value="yes"> Yes
+                                <input type="radio" name="allow_upload" value="yes"> Yes
                             </label>
                             <label>
-                                <input id="modify-no-allow-upload" type="radio" name="allow_upload" value="no"> No
+                                <input type="radio" name="allow_upload" value="no"> No
                             </label>
                         </div>
                         <button type="submit" class="btn btn-default">Save Changes</button>
@@ -178,62 +173,47 @@
 {% block script %}
 <script>
     $(document).ready(function(){
-        // list server directories.
-        $('#newpub-jstree').jstree({ 'core' : {
-                'data' : {'asyn':true, 'url':"{{url_for('admin.dir_tree')}}"}
-            }
-        });
-    
-        $('#newpub-jstree').on("changed.jstree", function (e, data) {
-            url = data.selected[0];
-            $("input[name='path']").val(url);
-        });
 
-        $("input[name='access']").click(function(){
-            
-            if ($(this).val() === 'public') {
-                $("div.password").addClass("disappear");
-                $("#password").attr("disabled", true);
-                $("#confirm_password").attr("disabled", true);
-            } else {
-                $("div.password").removeClass("disappear");
-                $("#password").attr("disabled", false);
-                $("#confirm_password").attr("disabled", false);
-            }
-        });
-
-        $("form[name='create-pubitem']").validate({
+        $("form[name='pub-create']").validate({
             rules: {
                 name: "required",
                 path: "required",
                 password: {
-                    required: true,
                     rangelength: [5, 20],
-                },
-
-                confirm_password: {
-                    equalTo: '#password',
                 },
             },
             messages: {
                 name: "Empty pub name.",
                 path: "Path required.",
                 password: {
-                    required: 'Empty password.',
                     rangelength: 'Length between 5 and 20.',
-                },
-                confirm_password: {
-                    equalTo: 'Not equal to password.',
                 },
             }
         });
 
-        $("form[name='create-pubitem']").submit(function(e){
+        $("form[name='pub-modify']").validate({
+            rules: {
+                name: "required",
+                path: "required",
+                password: {
+                    rangelength: [5, 20],
+                },
+            },
+            messages: {
+                name: "Empty pub name.",
+                path: "Path required.",
+                password: {
+                    rangelength: 'Length between 5 and 20.',
+                },
+            }
+        });
+
+        // create an pub.
+        $("form[name='pub-create']").submit(function(e){
             if (!$(this).valid()) {
                 e.preventDefault();
                 return;
             }
-
             $.post("{{url_for('admin.new_pub')}}", 
                     $(this).serialize(), 
                     function(data) {
@@ -241,84 +221,22 @@
                             alert("Publish an folder success.");
                             window.location.reload();
                         } else {
-                            alert("Create new user occurred an error:" + data.msg);
+                            alert("Failed to publish folder:" + data.msg);
                         }
                     }, "json"
             );
-            $("#pub-folder").modal('hide');
+            $("#md-pub-create").modal('hide');
             e.preventDefault();
             $(this)[0].reset();
         });
 
-        // get an pub for modify.
-        $("button[name='pub-modify']").on('click', function(){
-            // show pub-modify modal and get value.
-            var pub_id = $(this).attr('pub_id');
-            $.get(
-                "/api/pub/" + pub_id,
-                function(data){
-                    console.log(data);
-                    $('#modify-pubid').val(data.id);
-                    $('#modify-pubname').val(data.name);
-                    $('#modify-description').val(data.description);
-                    $('#modify-path').val(data.path);
-                    if (data.access === 'public') {
-                        $("#modify-access-public").prop("checked","checked");
-                        $('div.modify-password').addClass('disappear');
-                        $("#modify-password").attr("disabled", true);
-                    } else {
-                        $("#modify-access-protected").prop("checked","checked");
-                        $('div.modify-password').removeClass('disappear');
-                        $("#modify-password").attr("disabled", false);
-                        $("#modify-password").val(data.password);
-                    }
-
-                    if (data.allow_upload) {
-                        $("#modify-allow-upload").prop("checked","checked");
-                    } else {
-                        $("#modify-no-allow-upload").prop("checked","checked");
-                    }
-                }
-            );
-            $('#pub-modify').modal('show');
-        });
-
-        $("input[name='modify-access']").click(function(){
-            
-            if ($(this).val() === 'public') {
-                $("div.modify-password").addClass("disappear");
-                $("#modify-password").attr("disabled", true);
-            } else {
-                $("div.modify-password").removeClass("disappear");
-                $("#modify-password").attr("disabled", false);
-            }
-        });
-
-        $("form[name='modify-pub']").validate({
-            rules: {
-                name: "required",
-                path: "required",
-                password: {
-                    required: true,
-                    rangelength: [5, 20],
-                },
-            },
-            messages: {
-                name: "Empty pub name.",
-                path: "Path required.",
-                password: {
-                    required: 'Empty password.',
-                    rangelength: 'Length between 5 and 20.',
-                },
-            }
-        });
-
-        $("form[name='modify-pub']").submit(function(e){
+        // modify an pub.
+        $("form[name='pub-modify']").submit(function(e){
             if (!$(this).valid()) {
                 e.preventDefault();
                 return;
             }
-            var pub_id = $('#modify-pubid').val();
+            var pub_id = $(this).find("input[name='id']").val();
             $.ajax({
                     url: "/api/pub/" + pub_id,
                     type: "put",
@@ -330,7 +248,7 @@
                     }
             });
 
-            $("#pub-modify").modal('hide');
+            $("#md-pub-modify").modal('hide');
             e.preventDefault();
             $(this)[0].reset();
         });
@@ -350,6 +268,67 @@
                 });
             }
         });
+
+        // pub-create directory select jstree initialize.
+        $("div[name='pub-create-dir-select']").jstree({
+            'core' : {
+                'data' : {'asyn':true, 'url':"{{url_for('admin.dir_tree')}}"}
+            }
+        });
+
+        // pub-create directory select jstree changed.
+        $("div[name='pub-create-dir-select']").on("changed.jstree", function (e, data) {
+            url = data.selected[0];
+            $("form[name='pub-create']").find("input[name='path']").val(url);
+        });
+
+        $("input[name='access']").click(function(){
+            var form = $(this).parents("form");
+            var access_name = $(this).val();
+
+            if (access_name === 'public') {
+                form.find("div.password").addClass("disappear");
+                form.find("input[name='password']").attr("disabled", true);
+            } else {
+                // protected.
+                form.find("div.password").removeClass("disappear");
+                form.find("input[name='password']").attr("disabled", false);
+            }
+        });
+
+        // get an pub for modify.
+        $("button[name='pub-modify']").on('click', function(){
+            // show pub-modify modal and get value.
+            var pub_id = $(this).attr('pub_id');
+            $.get(
+                "/api/pub/" + pub_id,
+                function(data){
+                    var form = $("form[name='pub-modify']");
+                    form.find("input[name='id']").val(data.id);
+                    form.find("input[name='name']").val(data.name);
+                    form.find("input[name='description']").val(data.description);
+                    form.find("input[name='path']").val(data.path);
+                    if (data.access === 'public') {
+                        form.find("input[name='access'][value='public']").prop("checked","checked");
+                        form.find("div.password").addClass('disappear');
+                        form.find("input[name='password']").attr("disabled", true);
+                    } else {
+                        form.find("input[name='access'][value='protected']").prop("checked","checked");
+                        form.find("div.password").removeClass('disappear');
+                        form.find("input[name='password']").attr("disabled", false);
+                        form.find("input[name='password']").val(data.password);
+                    }
+
+                    if (data.allow_upload) {
+                        form.find("input[name='allow_upload'][value='yes']").prop("checked","checked");
+                    } else {
+                        form.find("input[name='allow_upload'][value='no']").prop("checked","checked");
+                    }
+                }
+            );
+            $('#md-pub-modify').modal('show');
+        });
+
     });
 </script>
 {% endblock %}

@@ -40,4 +40,5 @@ class RespArgumentWrong(AjaxResp):
         #: Return with http status: 400, Bad Request.
         if extra:
             super().__init__(3, "Argument '%s' %s."%(arg_name, extra), 400)
-        super().__init__(3, "Argument '%s' wrong."%arg_name, 400)
+        else:
+            super().__init__(3, "Argument '%s' wrong."%arg_name, 400)

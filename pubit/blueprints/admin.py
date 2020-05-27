@@ -87,14 +87,11 @@ def new_pub():
         else:
             is_public = False
             password = request.form.get("password") 
-            confirm_password = request.form.get("confirm_password")
-            if password is None or confirm_password is None:
+            if password is None:
                 return jsonify(dict(code=103, msg="Required argument 'password' and 'confirm_password'."))
             if len(password) < 5 or len(password) > 20:
                 return jsonify(dict(code=104, msg="Argument 'password' length must between 5 and 20."))
-            if password != confirm_password:
-                return jsonify(dict(code=105, msg="Argument 'confirm_password' not equal to 'password'."))
-        
+
         allow_upload = request.form.get("allow_upload", "no")
         if allow_upload == 'yes':
             allow_upload = True
