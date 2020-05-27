@@ -45,8 +45,8 @@
             <td>{{pub.path}}</td>
             <td>{{pub.allow_upload}}</td>
             <td>
-                <button class="btn btn-danger btn-xs">Delete</button>
-                <button class="btn btn-info btn-xs" data-toggle="modal" data-target="#modify-pub">Modify</button>
+                <button class="btn btn-danger btn-xs" name="pub-delete" pub_id="{{pub.id}}">Delete</button>
+                <button class="btn btn-info btn-xs" name="pub-modify" pub_id={{pub.id}}>Modify</button>
             </td>
         </tr>
         {% endfor %}
@@ -116,7 +116,8 @@
         </div><!-- /.modal-dialog -->
     </div><!-- /.modal -->
 
-    <div id="modify-pub" class="modal fade" tabindex="-1" role="dialog">
+    <!-- Modify an pub modal -->
+    <div id="pub-modify" class="modal fade" tabindex="-1" role="dialog"> <!-- pub-modify -->
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -125,49 +126,44 @@
                 </div>
                 <div class="modal-body">
                     <form name="modify-pub">
-                        <input id="pubid" name="id" type="hidden" class="form-control" value="1">
+                        <input id="modify-pubid" name="id" type="hidden" class="form-control">
                         <div class="form-group">
-                            <label for="pubname">Pub name</label>
-                            <input id="pubname" name="name" type="text" class="form-control" placeholder="Pub name">
+                            <label for="modify-pubname">Pub name</label>
+                            <input id="modify-pubname" name="name" type="text" class="form-control" placeholder="Pub name">
                         </div>
 
                         <div class="form-group">
-                            <label for="description">Pub description</label>
-                            <input id="description" name="description" type="textarea" class="form-control" placeholder="Pub description">
+                            <label for="modify-description">Pub description</label>
+                            <input id="modify-description" name="description" type="textarea" class="form-control" placeholder="Pub description">
                         </div>
 
                         <div class="form-group">
-                            <label for="path">Pub directory</label>
-                            <input id="path" name="path" type="text" class="form-control" placeholder="Pub directory" value="/" readonly>
+                            <label for="modify-path">Pub directory</label>
+                            <input id="modify-path" name="path" type="text" class="form-control" placeholder="Pub directory" value="/" readonly>
                         </div>
 
                         <div class="radio">
                             Pub access: 
                             <label>
-                                <input type="radio" name="access" value="public" checked> Public
+                                <input id="modify-access-public" type="radio" name="modify-access" value="public" checked> Public
                             </label>
                             <label>
-                                <input type="radio" name="access" value="protected"> Protected
+                                <input id="modify-access-protected" type="radio" name="modify-access" value="protected"> Protected
                             </label>
                         </div>
 
-                        <div class="form-group password disappear">
-                            <label for="password">Password</label>
-                            <input id="password" name="password" type="password" class="form-control" placeholder="Password">
-                        </div>
-
-                        <div class="form-group password disappear">
-                            <label for="confirm_password">Confirm password</label>
-                            <input id="confirm_password" name="confirm_password" type="password" class="form-control" placeholder="Input password again">
+                        <div class="form-group modify-password disappear">
+                            <label for="modify-password">Password</label>
+                            <input id="modify-password" name="password" type="text" class="form-control" placeholder="Password">
                         </div>
 
                         <div class="radio">
                             Allow upload: 
                             <label>
-                                <input type="radio" name="allow_upload" value="yes"> Yes
+                                <input id="modify-allow-upload" type="radio" name="allow_upload" value="yes"> Yes
                             </label>
                             <label>
-                                <input type="radio" name="allow_upload" value="no" checked> No
+                                <input id="modify-no-allow-upload" type="radio" name="allow_upload" value="no"> No
                             </label>
                         </div>
                         <button type="submit" class="btn btn-default">Save Changes</button>
@@ -175,7 +171,7 @@
                 </div>
             </div><!-- /.modal-content -->
         </div><!-- /.modal-dialog -->
-    </div><!-- /.modal -->
+    </div><!-- /pub-modify.modal -->
 </div>
 {% endblock %}
 
@@ -194,7 +190,7 @@
         });
 
         $("input[name='access']").click(function(){
-            console.log($(this).val());
+            
             if ($(this).val() === 'public') {
                 $("div.password").addClass("disappear");
                 $("#password").attr("disabled", true);
@@ -252,6 +248,107 @@
             $("#pub-folder").modal('hide');
             e.preventDefault();
             $(this)[0].reset();
+        });
+
+        // get an pub for modify.
+        $("button[name='pub-modify']").on('click', function(){
+            // show pub-modify modal and get value.
+            var pub_id = $(this).attr('pub_id');
+            $.get(
+                "/api/pub/" + pub_id,
+                function(data){
+                    console.log(data);
+                    $('#modify-pubid').val(data.id);
+                    $('#modify-pubname').val(data.name);
+                    $('#modify-description').val(data.description);
+                    $('#modify-path').val(data.path);
+                    if (data.access === 'public') {
+                        $("#modify-access-public").prop("checked","checked");
+                        $('div.modify-password').addClass('disappear');
+                        $("#modify-password").attr("disabled", true);
+                    } else {
+                        $("#modify-access-protected").prop("checked","checked");
+                        $('div.modify-password').removeClass('disappear');
+                        $("#modify-password").attr("disabled", false);
+                        $("#modify-password").val(data.password);
+                    }
+
+                    if (data.allow_upload) {
+                        $("#modify-allow-upload").prop("checked","checked");
+                    } else {
+                        $("#modify-no-allow-upload").prop("checked","checked");
+                    }
+                }
+            );
+            $('#pub-modify').modal('show');
+        });
+
+        $("input[name='modify-access']").click(function(){
+            
+            if ($(this).val() === 'public') {
+                $("div.modify-password").addClass("disappear");
+                $("#modify-password").attr("disabled", true);
+            } else {
+                $("div.modify-password").removeClass("disappear");
+                $("#modify-password").attr("disabled", false);
+            }
+        });
+
+        $("form[name='modify-pub']").validate({
+            rules: {
+                name: "required",
+                path: "required",
+                password: {
+                    required: true,
+                    rangelength: [5, 20],
+                },
+            },
+            messages: {
+                name: "Empty pub name.",
+                path: "Path required.",
+                password: {
+                    required: 'Empty password.',
+                    rangelength: 'Length between 5 and 20.',
+                },
+            }
+        });
+
+        $("form[name='modify-pub']").submit(function(e){
+            if (!$(this).valid()) {
+                e.preventDefault();
+                return;
+            }
+            var pub_id = $('#modify-pubid').val();
+            $.ajax({
+                    url: "/api/pub/" + pub_id,
+                    type: "put",
+                    dataType:"json",
+                    data: $(this).serialize(),
+                    success: function(data){
+                        alert(data.msg);
+                        window.location.reload();
+                    }
+            });
+
+            $("#pub-modify").modal('hide');
+            e.preventDefault();
+            $(this)[0].reset();
+        });
+
+        // delete an pub.
+        $("button[name='pub-delete']").on('click', function(){
+            var pub_id = $(this).attr('pub_id');
+            if (confirm('Are you sure delete this pub?')) {
+                $.ajax({
+                    url: "/api/pub/" + pub_id,
+                    type: "delete",
+                    dataType:"json",
+                    success: function(data){
+                        alert(data.msg);
+                        window.location.reload();
+                    }
+                });
+            }
         });
     });
 </script>

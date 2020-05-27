@@ -11,6 +11,7 @@ def pub_schema(pubitem):
     return dict(
         id = pubitem.id,
         uuid = pubitem.uuid,
+        name = pubitem.name,
         description = pubitem.description,
         pubtime = pubitem.standard_pubtime,
         base_dir = pubitem.base_dir,

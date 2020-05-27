@@ -60,7 +60,50 @@ class PubAPI(MethodView):
     def put(self, pub_id):
         """ Modify an pub item.
         """
-        pass
+        try:
+            pub_id = request.form.get('id', None)
+            if pub_id is None:
+                return RespArgumentWrong('id', 'missed').jsonify
+            pub = Pubitem.query.get(int(pub_id))
+            if pub is None:
+                return RespArgumentWrong('id', 'not existed').jsonify
+            
+            pub_name = request.form.get('name', None)
+            if pub_name is None:
+                return RespArgumentWrong('name', 'missed').jsonify
+            if len(pub_name) > 20:
+                return RespArgumentWrong('name', 'length must less than 20').jsonify
+
+            allow_upload = request.form.get("allow_upload", "yes" if pub.allow_upload else "no")
+            if allow_upload == 'yes':
+                allow_upload = True
+            else:
+                allow_upload = False
+
+            if request.form.get('access') == 'public':
+                pub.is_public = True
+            else:
+                password = request.form.get('password')
+                if password is None:
+                    return RespArgumentWrong('password', 'missed').jsonify
+                if len(password) < 5 or len(password) > 20:
+                    return RespArgumentWrong('password', 'length must be 5 and 20').jsonify
+                
+                pub.is_public = False
+                pub.password = password
+            pub.name = pub_name
+            pub.description = request.form.get('description', '')
+            pub.allow_upload = allow_upload
+            db.session.commit()
+            return RespSuccess().jsonify
+        except IntegrityError as e:
+            db.session.rollback()
+            current_app.logger.error(e)
+            return RespArgumentWrong('name', 'has existed.').jsonify
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(e)
+            return RespServerWrong().jsonify
 
     def delete(self, pub_id):
         """ Delete an pub item.

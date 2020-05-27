@@ -36,6 +36,8 @@ class RespServerWrong(AjaxResp):
         super().__init__(2, 'Server occoured an exception.', 500)
 
 class RespArgumentWrong(AjaxResp):
-    def __init__(self, arg_name):
+    def __init__(self, arg_name, extra=None):
         #: Return with http status: 400, Bad Request.
+        if extra:
+            super().__init__(3, "Argument '%s' %s."%(arg_name, extra), 400)
         super().__init__(3, "Argument '%s' wrong."%arg_name, 400)
