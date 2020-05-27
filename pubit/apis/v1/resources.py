@@ -16,9 +16,9 @@ from pubit.models import Pubitem
 from pubit.service import Node
 from pubit.extensions import db
 from pubit.apis.decorators import admin_required
+from pubit.apis.resps import RespSuccess, RespServerWrong, RespArgumentWrong
 from pubit.apis.v1 import api_v1
 from pubit.apis.v1.schemas import pub_schema
-from pubit.apis.v1.errors import ServerError
 
 class IndexAPI(MethodView):
     def get(self):
@@ -31,11 +31,11 @@ class IndexAPI(MethodView):
 class PubAPI(MethodView):
     decorators = [admin_required]
 
-    def get(self):
+    def get(self, pub_id=None):
         """ Return pub item description.
         """
         try:
-            pub_id = request.args.get('pub_id', None)
+            #pub_id = request.args.get('pub_id', None)
             if pub_id is None:
                 # return pub items.
                 pubs = list()
@@ -47,10 +47,10 @@ class PubAPI(MethodView):
                 pub = Pubitem.query.get(int(pub_id))
                 if pub:
                     return jsonify(pub_schema(pub))
-                return jsonify(dict())
+                return RespArgumentWrong('pub_id').jsonify
         except Exception as e:
             current_app.logger.error(e)
-            return ServerError.json_resp
+            return RespServerWrong().jsonify
 
     def post(self):
         """ Create an new pub item.
@@ -65,7 +65,18 @@ class PubAPI(MethodView):
     def delete(self, pub_id):
         """ Delete an pub item.
         """
-        pass
+        try:
+            pub = Pubitem.query.get(int(pub_id))
+            if pub:
+                db.session.delete(pub)
+                db.session.commit()
+                return RespSuccess().jsonify
+            return RespArgumentWrong('pub_id').jsonify
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(e)
+            return RespServerWrong().jsonify
 
 api_v1.add_url_rule('/', view_func=IndexAPI.as_view('index'), methods=['GET'])
-api_v1.add_url_rule('/pub', view_func=PubAPI.as_view('pub'), methods=['GET', 'POST', 'PUT', 'DELETE'])
+api_v1.add_url_rule('/pub', view_func=PubAPI.as_view('pub'), methods=['GET', 'POST'])
+api_v1.add_url_rule('/pub/<int:pub_id>', view_func=PubAPI.as_view('pub_item'), methods=['GET', 'PUT', 'DELETE'])
