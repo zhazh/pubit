@@ -55,7 +55,52 @@ class PubAPI(MethodView):
     def post(self):
         """ Create an new pub item.
         """
-        pass
+        try:
+            name = request.form.get('name')
+            if name is None:
+                return RespArgumentWrong('name', 'missed').jsonify
+            description = request.form.get("description", "")
+            path = request.form.get("path")
+            if path is None:
+                return RespArgumentWrong('path', 'missed').jsonify
+            else:
+                node = Node(path=path)
+                if not os.path.isdir(node.local_path):
+                    return RespArgumentWrong('path', 'invalid').jsonify
+
+            access = request.form.get("access", "public")
+            if access == 'public':
+                is_public = True
+            else:
+                is_public = False
+                password = request.form.get("password") 
+                if password is None:
+                    return RespArgumentWrong('password', 'missed').jsonify
+                if len(password) < 5 or len(password) > 20:
+                    return RespArgumentWrong('password', 'length must be 5 and 20').jsonify
+
+            allow_upload = request.form.get("allow_upload", "no")
+            if allow_upload == 'yes':
+                allow_upload = True
+            else:
+                allow_upload = False
+
+            base_dir = current_app.config['ADMIN_HOME']
+            if is_public:
+                pub = Pubitem(name=name, description=description, base_dir=base_dir, path=path, is_public=is_public, allow_upload=allow_upload)
+            else:
+                pub = Pubitem(name=name, description=description, base_dir=base_dir, path=path, password=password, is_public=is_public, allow_upload=allow_upload)
+            db.session.add(pub)
+            db.session.commit()
+            return RespSuccess().jsonify
+        except IntegrityError as e:
+            db.session.rollback()
+            current_app.logger.error(e)
+            return RespArgumentWrong('name', 'has existed.').jsonify
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(e)
+            return RespServerWrong().jsonify
 
     def put(self, pub_id):
         """ Modify an pub item.
