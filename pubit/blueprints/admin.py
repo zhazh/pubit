@@ -10,7 +10,7 @@ from flask import (
     current_app, session, jsonify
 )
 from sqlalchemy.exc import IntegrityError
-from pubit.forms import LoginForm, NewPubitemForm
+from pubit.forms import LoginForm
 from pubit.decorators import admin_check, admin_authed, admin_login, admin_logout, admin_required
 from pubit.models import Pubitem
 from pubit.service import Node

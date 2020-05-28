@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block main %}
+<div></div>
+<div class="login">
+	<form name="login" action="{{url_for('pub.login')}}" method="POST">
+		{{form.hidden_tag()}}
+		<h3 class="font-weight-normal text-center">Protected Pub</h3>
+		<div class="form-group">
+			{{form.pubname(size=40, class="form-control", placeholder="Pub name")}}
+			{% for error in form.pubname.errors %}
+			  <label class="error">{{error}}</label>
+			{% endfor %}
+		</div>
+		<div class="form-group">
+			{{form.password(size=40, class="form-control", placeholder="Pub password")}}
+			{% for error in form.password.errors %}
+			  <label class="error">{{error}}</label>
+			{% endfor %}
+		</div>
+		{{form.submit(class='btn btn-primary btn-block')}}
+	</form>
+</div>
+{% endblock %}

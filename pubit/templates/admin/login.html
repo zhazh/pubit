@@ -5,7 +5,7 @@
 <div class="login">
 	<form name="login" action="{{url_for('admin.login')}}" method="POST">
 		{{form.hidden_tag()}}
-		<h3 class="font-weight-normal text-center">Sign In</h3>
+		<h3 class="font-weight-normal text-center">Admin</h3>
 		<div class="form-group">
 			{{form.username(size=40, class="form-control", placeholder="Username")}}
 			{% for error in form.username.errors %}
@@ -21,4 +21,21 @@
 		{{form.submit(class='btn btn-primary btn-block')}}
 	</form>
 </div>
+{% endblock %}
+
+{% block script %}
+<script>
+	$(document).ready(function(){
+        $("form[name='login']").validate({
+            rules: {
+                username: "required",
+                password: "required",
+            },
+            messages: {
+                username: "Empty user name.",
+                password: "Empty password.",
+            }
+        });
+	});
+</script>
 {% endblock %}
