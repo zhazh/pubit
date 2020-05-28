@@ -64,8 +64,10 @@ class PubAPI(MethodView):
             if path is None:
                 return RespArgumentWrong('path', 'missed').jsonify
             else:
-                node = Node(path=path)
-                if not os.path.isdir(node.local_path):
+                base_dir = current_app.config['ADMIN_HOME']
+                node = Node(base_dir=base_dir, path=path)
+                location = node.local_path
+                if not os.path.isdir(location):
                     return RespArgumentWrong('path', 'invalid').jsonify
 
             access = request.form.get("access", "public")
@@ -84,12 +86,11 @@ class PubAPI(MethodView):
                 allow_upload = True
             else:
                 allow_upload = False
-
-            base_dir = current_app.config['ADMIN_HOME']
+        
             if is_public:
-                pub = Pubitem(name=name, description=description, base_dir=base_dir, path=path, is_public=is_public, allow_upload=allow_upload)
+                pub = Pubitem(name=name, description=description, location=location, is_public=is_public, allow_upload=allow_upload)
             else:
-                pub = Pubitem(name=name, description=description, base_dir=base_dir, path=path, password=password, is_public=is_public, allow_upload=allow_upload)
+                pub = Pubitem(name=name, description=description, location=location, password=password, is_public=is_public, allow_upload=allow_upload)
             db.session.add(pub)
             db.session.commit()
             return RespSuccess().jsonify

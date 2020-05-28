@@ -24,8 +24,7 @@
             <td>Name</td>
             <td>Password</td>
             <td>Description</td>
-            <td>Base directory</td>
-            <td>Path</td>
+            <td>Location</td>
             <td>Allow upload</td>
             <td>Operation</td>
         </tr>
@@ -41,8 +40,7 @@
             <td>{{pub.name}}</td>
             <td>{{pub.password or ''}}</td>
             <td>{{pub.description}}</td>
-            <td>{{pub.base_dir}}</td>
-            <td>{{pub.path}}</td>
+            <td>{{pub.location}}</td>
             <td>{{pub.allow_upload}}</td>
             <td>
                 <button class="btn btn-danger btn-xs" name="pub-delete" pub_id="{{pub.id}}">Delete</button>

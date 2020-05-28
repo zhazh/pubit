@@ -14,8 +14,7 @@ def pub_schema(pubitem):
         name = pubitem.name,
         description = pubitem.description,
         pubtime = pubitem.standard_pubtime,
-        base_dir = pubitem.base_dir,
-        path = pubitem.path,
+        location = pubitem.location,
         password = pubitem.password,
         access = pubitem.access,
         allow_upload = pubitem.allow_upload
