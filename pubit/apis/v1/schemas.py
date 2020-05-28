@@ -19,3 +19,12 @@ def pub_schema(pubitem):
         access = pubitem.access,
         allow_upload = pubitem.allow_upload
     )
+
+def node_schema(nodeitem):
+    return dict(
+        create = nodeitem.create,
+        name = nodeitem.name,
+        path = nodeitem.path,
+        size = nodeitem.size,
+        type = nodeitem.type,
+    )

@@ -6,6 +6,9 @@
         <a href="{{url_for('pub.logout')}}">Sign out</a>
     </li>
 </ul>
+<ul class="nav navbar-form navbar-right">
+    <li><input name="search" type="text" placeholder="Search file in pub..." class="form-control"></li>
+</ul>
 {% endblock %}
 
 {% block main %}
@@ -14,7 +17,8 @@
 </div>
 
 <div class="main-content">
-    Name = {{pub.name}}
+    <div id="pubitem-list" uuid="{{pub.uuid}}">
+    </div>
 </div>
 {% endblock %}
 
@@ -24,7 +28,7 @@
         // pubitem directory select jstree initialize.
         $("div[name='pubitem-dir-tree']").jstree({
             'core' : {
-                'data' : {'asyn':true, 'url':"{{url_for('api.itemtree', uuid=pub.uuid)}}"}
+                'data' : {'asyn':true, 'url':"{{url_for('api.item', uuid=pub.uuid)}}"}
             }
         });
 
@@ -34,6 +38,21 @@
             console.log(url);
             //$("form[name='pub-create']").find("input[name='path']").val(url);
         });
+
+        show_pubs = function(pubs){
+
+        };
+
+        // get root dirctory file and dir list.
+        $.get(
+            "{{url_for('api.item', uuid=pub.uuid)}}",
+            {path:'/'},
+            function(data){
+                console.log(data);
+                show_pubs(data);
+            }, 
+            "json"
+        );
     });
 </script>
 {% endblock %}

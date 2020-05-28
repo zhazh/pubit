@@ -18,7 +18,7 @@ from pubit.extensions import db
 from pubit.apis.decorators import admin_required
 from pubit.apis.resps import RespSuccess, RespServerWrong, RespArgumentWrong, RespUnauthenticated
 from pubit.apis.v1 import api_v1
-from pubit.apis.v1.schemas import pub_schema
+from pubit.apis.v1.schemas import pub_schema, node_schema
 
 class IndexAPI(MethodView):
     def get(self):
@@ -29,6 +29,8 @@ class IndexAPI(MethodView):
         })
 
 class PubAPI(MethodView):
+    """ Pub item operation provide for admin.
+    """
     decorators = [admin_required]
 
     def get(self, pub_id=None):
@@ -167,7 +169,7 @@ class PubAPI(MethodView):
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
-class ItemtreeAPI(MethodView):
+class ItemAPI(MethodView):
     def get(self, uuid):
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
@@ -178,14 +180,24 @@ class ItemtreeAPI(MethodView):
                 session_pub = session.get('pub')
                 if session_pub is None or session_pub != uuid:
                     return RespUnauthenticated().jsonify
-            node = Node(base_dir=pub.location, path='/')
-            return jsonify(node.tree)
+            
+            path = request.args.get('path', None)
+            if path is None:
+                #: Return pub folder root directory tree.
+                node = Node(base_dir=pub.location, path='/')
+                return jsonify(node.tree)
+            else:
+                #: Return pub item sub directory(path) file and directory.
+                node = Node(base_dir=pub.location, path=path)
+                node_list = list()
+                for subnode in node.children:
+                    node_list.append(node_schema(subnode))
+                return jsonify(node_list)
         except Exception as e:
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
-
 api_v1.add_url_rule('/', view_func=IndexAPI.as_view('index'), methods=['GET'])
 api_v1.add_url_rule('/pub', view_func=PubAPI.as_view('pub'), methods=['GET', 'POST'])
 api_v1.add_url_rule('/pub/<int:pub_id>', view_func=PubAPI.as_view('pub_item'), methods=['GET', 'PUT', 'DELETE'])
-api_v1.add_url_rule('/itemtree/<uuid>', view_func=ItemtreeAPI.as_view('itemtree'), methods=['GET'])
+api_v1.add_url_rule('/item/<uuid>', view_func=ItemAPI.as_view('item'), methods=['GET'])

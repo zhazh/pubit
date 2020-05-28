@@ -67,6 +67,10 @@ class Node(object):
         self.create = _standard_timestr(node_info.st_ctime)
         self.visit = _standard_timestr(node_info.st_atime)
         self.modify = _standard_timestr(node_info.st_mtime)
+        if os.path.isdir(self.local_path):
+            self.type = 'dir'
+        else:
+            self.type = 'file'
 
     @property
     def layer_path(self):
@@ -96,7 +100,7 @@ class Node(object):
                 path = '/' + _name
             else:
                 path = self.path + '/' + _name
-            node = Node(path)
+            node = Node(base_dir=self.base_dir, path=path)
             child_list.append(node)
         return child_list
     
