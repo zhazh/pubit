@@ -17,6 +17,10 @@
 </div>
 
 <div class="main-content">
+    {% if pub.allow_upload %}
+    <div class="toolbar">Upload tool</div>
+    {% endif %}
+    <div id="pubitem-list-nav" class="nav">nav</div>
     <div id="pubitem-list" uuid="{{pub.uuid}}">
     </div>
 </div>
@@ -35,24 +39,52 @@
         // pubitem directory select jstree changed.
         $("div[name='pubitem-dir-tree']").on("changed.jstree", function (e, data) {
             url = data.selected[0];
-            console.log(url);
+            load_pubs(url);
             //$("form[name='pub-create']").find("input[name='path']").val(url);
         });
 
         show_pubs = function(pubs){
+            var table = $("<table class='table'></table>");
+            var tab_head = $("<tr><td>#</td><td>Create time</td><td>Name</td><td>Size</td></tr>");
+            table.append(tab_head);
+            for (i=0; i<pubs.length; i++) {
+                var item = $('<tr></tr>');
+                var type=$('<td>' + pubs[i].type + '</td>');
+                var create = $('<td>' + pubs[i].create + '</td>');
+                if (pubs[i].type === 'dir') {
+                    var on_click = "onclick=\"load_pubs('"+ pubs[i].path + "');\"";
+                    var href = $("<a href='javasrcipt:void(0)' "+ on_click + ">" + pubs[i].name + "</a>");
+                    var name = $('<td></td>');
+                    name.append(href);
+                } else {
+                    var name = $('<td>' + pubs[i].name + '</td>');
+                }
+                var size = $('<td>' + pubs[i].size + '</td>');
+                item.append(type);
+                item.append(create);
+                item.append(name);
+                item.append(size);
+                table.append(item);
+            }
+            $("#pubitem-list").empty();
+            $("#pubitem-list").append(table);
+        };
 
+        load_pubs = function(url) {
+            $('#pubitem-list-nav').empty();
+            $('#pubitem-list-nav').append(url);
+            $.get(
+                "{{url_for('api.item', uuid=pub.uuid)}}",
+                {path: url},
+                function(data){
+                    show_pubs(data);
+                }, 
+                "json"
+            );
         };
 
         // get root dirctory file and dir list.
-        $.get(
-            "{{url_for('api.item', uuid=pub.uuid)}}",
-            {path:'/'},
-            function(data){
-                console.log(data);
-                show_pubs(data);
-            }, 
-            "json"
-        );
+        load_pubs("/");
     });
 </script>
 {% endblock %}

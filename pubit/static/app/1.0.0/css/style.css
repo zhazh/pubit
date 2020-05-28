@@ -43,6 +43,10 @@ html body {
 	text-decoration: none;
 }
 
+.main-content {
+	background-color: #fff;
+}
+
 form[name=login] {
 	position: fixed;
 	top: 180px;
