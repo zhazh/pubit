@@ -10,7 +10,7 @@
 
 {% block main %}
 <div class="sidebar">
-    sidebar menu.
+    <div name="pubitem-dir-tree"></div>
 </div>
 
 <div class="main-content">
@@ -21,7 +21,19 @@
 {% block script %}
 <script>
     $(document).ready(function(){
-        
+        // pubitem directory select jstree initialize.
+        $("div[name='pubitem-dir-tree']").jstree({
+            'core' : {
+                'data' : {'asyn':true, 'url':"{{url_for('api.itemtree', uuid=pub.uuid)}}"}
+            }
+        });
+
+        // pubitem directory select jstree changed.
+        $("div[name='pubitem-dir-tree']").on("changed.jstree", function (e, data) {
+            url = data.selected[0];
+            console.log(url);
+            //$("form[name='pub-create']").find("input[name='path']").val(url);
+        });
     });
 </script>
 {% endblock %}

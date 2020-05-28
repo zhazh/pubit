@@ -16,7 +16,7 @@ from pubit.models import Pubitem
 from pubit.service import Node
 from pubit.extensions import db
 from pubit.apis.decorators import admin_required
-from pubit.apis.resps import RespSuccess, RespServerWrong, RespArgumentWrong
+from pubit.apis.resps import RespSuccess, RespServerWrong, RespArgumentWrong, RespUnauthenticated
 from pubit.apis.v1 import api_v1
 from pubit.apis.v1.schemas import pub_schema
 
@@ -167,6 +167,25 @@ class PubAPI(MethodView):
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
+class ItemtreeAPI(MethodView):
+    def get(self, uuid):
+        try:
+            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
+            if pub is None:
+                return RespArgumentWrong('uuid', 'invalid.').jsonify
+            if not pub.is_public:
+                #protected folder item.
+                session_pub = session.get('pub')
+                if session_pub is None or session_pub != uuid:
+                    return RespUnauthenticated().jsonify
+            node = Node(base_dir=pub.location, path='/')
+            return jsonify(node.tree)
+        except Exception as e:
+            current_app.logger.error(e)
+            return RespServerWrong().jsonify
+
+
 api_v1.add_url_rule('/', view_func=IndexAPI.as_view('index'), methods=['GET'])
 api_v1.add_url_rule('/pub', view_func=PubAPI.as_view('pub'), methods=['GET', 'POST'])
 api_v1.add_url_rule('/pub/<int:pub_id>', view_func=PubAPI.as_view('pub_item'), methods=['GET', 'PUT', 'DELETE'])
+api_v1.add_url_rule('/itemtree/<uuid>', view_func=ItemtreeAPI.as_view('itemtree'), methods=['GET'])
