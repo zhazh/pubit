@@ -22,3 +22,20 @@
 	</form>
 </div>
 {% endblock %}
+
+{% block script %}
+<script>
+	$(document).ready(function(){
+        $("form[name='login']").validate({
+            rules: {
+                pubname: "required",
+                password: "required",
+            },
+            messages: {
+                pubname: "Empty pub name.",
+                password: "Empty password.",
+            }
+        });
+	});
+</script>
+{% endblock %}
