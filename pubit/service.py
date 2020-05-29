@@ -62,7 +62,7 @@ class _File(object):
                     else:
                         return 4, 'Text File'
         except Exception as e:
-            return -1, 'Unknow'
+            return -1, 'Unknow File'
 
 class Node(object):
     def __init__(self, base_dir=None, path='/'):
