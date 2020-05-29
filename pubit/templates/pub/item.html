@@ -18,10 +18,15 @@
 
 <div class="main-content">
     {% if pub.allow_upload %}
-    <div class="toolbar">Upload tool</div>
+    <div class="upload-toolbar">
+        <button class="btn btn-sm btn-success" role="pub-upload">Upload</button>
+    </div>
     {% endif %}
-    <div id="pubitem-list-nav" class="nav">nav</div>
-    <div id="pubitem-list" uuid="{{pub.uuid}}">
+    <div id="pubs-path-nav" class="pubs-path">
+        <!-- dynamic create path nav. -->
+    </div>
+    <div id="pubs-list" class="pubs-list">
+        <!-- dynamic load pubs list to here. -->
     </div>
 </div>
 {% endblock %}
@@ -35,7 +40,6 @@
                 'data' : {'asyn':true, 'url':"{{url_for('api.item', uuid=pub.uuid)}}"}
             }
         });
-
         // pubitem directory select jstree changed.
         $("div[name='pubitem-dir-tree']").on("changed.jstree", function (e, data) {
             url = data.selected[0];
@@ -43,9 +47,34 @@
             //$("form[name='pub-create']").find("input[name='path']").val(url);
         });
 
-        show_pubs = function(pubs){
+        update_path_nav = function(url) {
+            url_arr = url.split('/');
+            if (url_arr.length == 2 && url_arr[1] == '') {
+                delete url_arr[0];
+            }
+            var breadcrumb = $("<ol class='breadcrumb'></ol>");
+            for (i=0; i<url_arr.length; i++) {
+                var li = $('<li></li>');
+                if(i==0) {
+                    var href = $("<a href=\"javascript:void(0);\" onclick=\"load_pubs('/');\">Home</a>");
+                } else {
+                    var path = '';
+                    for (j=1; j<=i; j++) {
+                        path = path + '/' + url_arr[j];
+                    }
+                    var href = $("<a href=\"javascript:void(0);\" onclick=\"load_pubs('"+ path + "');\">" + url_arr[i] + "</a>");
+                }
+                li.append(href);
+                breadcrumb.append(li);
+            }
+            $('#pubs-path-nav').empty();
+            $('#pubs-path-nav').append(breadcrumb);
+        };
+
+        // requried function: load_pubs(url).
+        show_pubs = function(pubs) {
             var table = $("<table class='table'></table>");
-            var tab_head = $("<tr><td>#</td><td>Create time</td><td>Name</td><td>Size</td></tr>");
+            var tab_head = $("<tr><td>Name</td><td>Type</td><td>Create time</td><td>Size</td></tr>");
             table.append(tab_head);
             for (i=0; i<pubs.length; i++) {
                 var item = $('<tr></tr>');
@@ -60,24 +89,25 @@
                     var name = $('<td>' + pubs[i].name + '</td>');
                 }
                 var size = $('<td>' + pubs[i].size + '</td>');
+                item.append(name);
                 item.append(type);
                 item.append(create);
-                item.append(name);
                 item.append(size);
                 table.append(item);
             }
-            $("#pubitem-list").empty();
-            $("#pubitem-list").append(table);
+            $("#pubs-list").empty();
+            $("#pubs-list").append(table);
         };
 
         load_pubs = function(url) {
-            $('#pubitem-list-nav').empty();
-            $('#pubitem-list-nav').append(url);
+            $('#pubs-dir-path').empty();
+            $('#pubs-dir-path').append(url);
+            update_path_nav(url);
             $.get(
                 "{{url_for('api.item', uuid=pub.uuid)}}",
                 {path: url},
-                function(data){
-                    show_pubs(data);
+                function(pubs){
+                    show_pubs(pubs);
                 }, 
                 "json"
             );
