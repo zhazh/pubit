@@ -65,56 +65,55 @@ class _File(object):
             return -1, 'Unknow'
 
 class Node(object):
-    def __init__(self, base_dir=None, path=None):
+    def __init__(self, base_dir=None, path='/'):
         """ Create node attributes.
-            :attr base_dir:     path of base directory in server.
-            :attr path:         path relactive to base directory, such as '/', '/home', '/home/data'.
+            :attr base_dir:     absolute local path of base directory.
+            :attr path:         path relactive to base directory used web path style, such as '/', '/home', '/home/data'.
             :attr name:         node name, root path name is 'Home'.
-            :attr local_path:   the full path of node in server.
+            :attr local_path:   absolute local path of node.
             :attr size:         node size.
             :attr create:       node create time.
             :attr visit:        node last visit time.
             :attr modify:       node last modify time.
             :attr type:         node type, such as 'directory', 'audio file'
         """
-        if base_dir is None:
-            self.base_dir = current_app.config['ADMIN_HOME']
-        else:
-            self.base_dir = base_dir
+        self.base_dir = os.path.normpath(base_dir if base_dir else current_app.config['ADMIN_HOME'])
+        if not os.path.isdir(self.base_dir):
+            raise TypeError("Invalid argument 'base_dir'")
+        
         self.path = self._regulate_path(path)
         if self.path == '/':
-            self._set_base_use_default()
+            self.name = 'Home'
         else:
-            self.name = self.path.split('/')[-1]
-            self.local_path = os.path.join(self.base_dir, self.path[1:].replace('/', os.path.sep))
-        
+            self.name = os.path.split(self.path)[-1]
+        valid_path = list(filter(lambda p: p!='', self.path.split('/')))
+        self.local_path = os.path.join(self.base_dir, *valid_path)
         if not os.path.exists(self.local_path):
-            self._set_base_use_default()
+            raise TypeError("Invalid argument 'path'")
         self._set_extra()
 
     def _regulate_path(self, path):
         """ Regularize input path parameters.
         """
-        if path is None or path == '':
+        path_list = path.split('/')
+        stack = list()
+        for p in path_list:
+            if p != '':
+                if p == '..':
+                    if len(stack) > 0:
+                        stack.pop()
+                else:
+                    stack.append(p)
+        if len(stack) == 0:
             path = '/'
-        if path == '/':
-            return path
-        if not path[0] == '/':
-            path = '/' + path
-        if path[-1:] == '/':
-            path = path[:-1]
+        else:
+            path = ''
+            for p in stack:
+                path = path + '/' + p
         return path
-    
-    def _set_base_use_default(self):
-        """ Set base attr with default value.
-            base attrs: `path`, `name`, `local_path`
-        """
-        self.path = '/'
-        self.name = 'Home'
-        self.local_path = self.base_dir
 
     def _set_extra(self):
-        """ Set extra attributes after set `local_path`
+        """ Set extra attributes after set attr `local_path`.
         """
         node_info = os.stat(self.local_path)
         self.size = _unit_size(node_info.st_size)
