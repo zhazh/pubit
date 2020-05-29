@@ -15,6 +15,57 @@ def _kb_size(size):
 def _standard_timestr(localtime):
     return time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(localtime))
 
+class _FileType(object):
+    def __init__(self, name):
+        self.name = name
+
+    def is_this_type(self, filepath):
+        return False
+
+class _AudioFileType(_FileType):
+    def __init__(self):
+        super().__init__('Audio File')
+
+    def is_this_type(self, filepath):
+        path, filename = os.path.split(filepath)
+        suffix = filename.split('.')[-1].lower()
+        if suffix in ['mp3', 'wav']:
+            return True
+        return False
+
+class _VideoFileType(_FileType):
+    def __init__(self):
+        super().__init__('Video File')
+    
+    def is_this_type(self, filepath):
+        path, filename = os.path.split(filepath)
+        suffix = filename.split('.')[-1].lower()
+        if suffix in ['mp4', 'mov']:
+            return True
+        return False
+
+class _TextFileType(_FileType):
+    def __init__(self):
+        super().__init__('Text File')
+    
+    def is_this_type(self, filepath):
+        return True
+
+class _File(object):
+    __types__ = [
+        _AudioFileType(),
+        _VideoFileType(),
+    ]
+
+    def __init__(self, filepath):
+        self.filepath = filepath
+
+    def type_name(self):
+        for tp in self.__class__.__types__:
+            if tp.is_this_type(self.filepath):
+                return tp.name
+        return 'Unknow'
+
 class Node(object):
     def __init__(self, base_dir=None, path=None):
         """ Initialize node object with attributes.
@@ -68,9 +119,9 @@ class Node(object):
         self.visit = _standard_timestr(node_info.st_atime)
         self.modify = _standard_timestr(node_info.st_mtime)
         if os.path.isdir(self.local_path):
-            self.type = 'dir'
+            self.type = 'Directory'
         else:
-            self.type = 'file'
+            self.type = _File(self.local_path).type_name()
 
     @property
     def layer_path(self):

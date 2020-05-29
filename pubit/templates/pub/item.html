@@ -80,7 +80,7 @@
                 var item = $('<tr></tr>');
                 var type=$('<td>' + pubs[i].type + '</td>');
                 var create = $('<td>' + pubs[i].create + '</td>');
-                if (pubs[i].type === 'dir') {
+                if (pubs[i].type.toLowerCase() === 'directory') {
                     var on_click = "onclick=\"load_pubs('"+ pubs[i].path + "');\"";
                     var href = $("<a href='javasrcipt:void(0)' "+ on_click + ">" + pubs[i].name + "</a>");
                     var name = $('<td></td>');
