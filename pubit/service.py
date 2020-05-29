@@ -6,78 +6,82 @@ App middle service.
 """
 import os
 import time
+import codecs
 from datetime import datetime
 from flask import current_app
 
+def _unit_size(size):
+    """ Convert Byte size to KB/MB/GB/TB.
+    """
+    units = ['KB', 'MB', 'GB', 'TB']
+    i = 0
+    size = size / 1024
+    while size >= 1024 and i<(len(units)-1):
+        i = i + 1
+        size = size / 1024
+    return '%.2f %s'%(size, units[i])
+
 def _kb_size(size):
-    return '%.2f Kb' %(size/1024)
+    return '%.2f KB' %(size/1024)
 
 def _standard_timestr(localtime):
     return time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(localtime))
 
-class _FileType(object):
-    def __init__(self, name):
-        self.name = name
+_TEXT_BOMS = (
+    codecs.BOM_UTF16_BE,
+    codecs.BOM_UTF16_LE,
+    codecs.BOM_UTF32_BE,
+    codecs.BOM_UTF32_LE,
+    codecs.BOM_UTF8,
+)
 
-    def is_this_type(self, filepath):
-        return False
-
-class _AudioFileType(_FileType):
-    def __init__(self):
-        super().__init__('Audio File')
-
-    def is_this_type(self, filepath):
-        path, filename = os.path.split(filepath)
-        suffix = filename.split('.')[-1].lower()
-        if suffix in ['mp3', 'wav']:
-            return True
-        return False
-
-class _VideoFileType(_FileType):
-    def __init__(self):
-        super().__init__('Video File')
-    
-    def is_this_type(self, filepath):
-        path, filename = os.path.split(filepath)
-        suffix = filename.split('.')[-1].lower()
-        if suffix in ['mp4', 'mov']:
-            return True
-        return False
-
-class _TextFileType(_FileType):
-    def __init__(self):
-        super().__init__('Text File')
-    
-    def is_this_type(self, filepath):
-        return True
+def _is_binary_file(filepath):
+    with open(filepath, 'rb') as file:
+        initial_bytes = file.read(8192)
+        file.close()
+    return not any(initial_bytes.startswith(bom) for bom in _TEXT_BOMS) and b'\0' in initial_bytes
 
 class _File(object):
-    __types__ = [
-        _AudioFileType(),
-        _VideoFileType(),
-    ]
-
     def __init__(self, filepath):
         self.filepath = filepath
 
-    def type_name(self):
-        for tp in self.__class__.__types__:
-            if tp.is_this_type(self.filepath):
-                return tp.name
-        return 'Unknow'
+    def typename(self):
+        try:
+            if os.path.isdir(self.filepath):
+                return 0, 'Directory'
+            else:
+                path, filename = os.path.split(self.filepath)
+                suffix = filename.split('.')[-1].lower()
+                if suffix in ('mp3', 'wav'):
+                    return 1, 'Audio File'
+                elif suffix in ('mp4', 'mov'):
+                    return 2, 'Video File'
+                else:
+                    if _is_binary_file(self.filepath):
+                        return 3, 'Binaray File'
+                    else:
+                        return 4, 'Text File'
+        except Exception as e:
+            return -1, 'Unknow'
 
 class Node(object):
     def __init__(self, base_dir=None, path=None):
-        """ Initialize node object with attributes.
-            `path`: web path such as '/', '/home', '/home/data'
-            `name`: node name root path name is 'Home'
-            `local_path`: the full path of node in server.
+        """ Create node attributes.
+            :attr base_dir:     path of base directory in server.
+            :attr path:         path relactive to base directory, such as '/', '/home', '/home/data'.
+            :attr name:         node name, root path name is 'Home'.
+            :attr local_path:   the full path of node in server.
+            :attr size:         node size.
+            :attr create:       node create time.
+            :attr visit:        node last visit time.
+            :attr modify:       node last modify time.
+            :attr type:         node type, such as 'directory', 'audio file'
         """
         if base_dir is None:
-            self.base_dir = current_app.config.get('ADMIN_HOME')
+            self.base_dir = current_app.config['ADMIN_HOME']
         else:
             self.base_dir = base_dir
-        self.path = self._rectify(path)
+        self.path = self._regulate_path(path)
         if self.path == '/':
             self._set_base_use_default()
         else:
@@ -88,9 +92,8 @@ class Node(object):
             self._set_base_use_default()
         self._set_extra()
 
-    def _rectify(self, path):
-        """ Return regulated path.
-            rectify input path to regular path such as '/','/home', '/home/data'
+    def _regulate_path(self, path):
+        """ Regularize input path parameters.
         """
         if path is None or path == '':
             path = '/'
@@ -114,14 +117,11 @@ class Node(object):
         """ Set extra attributes after set `local_path`
         """
         node_info = os.stat(self.local_path)
-        self.size = _kb_size(node_info.st_size)
+        self.size = _unit_size(node_info.st_size)
         self.create = _standard_timestr(node_info.st_ctime)
         self.visit = _standard_timestr(node_info.st_atime)
         self.modify = _standard_timestr(node_info.st_mtime)
-        if os.path.isdir(self.local_path):
-            self.type = 'Directory'
-        else:
-            self.type = _File(self.local_path).type_name()
+        self.type = _File(self.local_path).typename()
 
     @property
     def layer_path(self):
@@ -143,7 +143,7 @@ class Node(object):
 
     @property
     def children(self):
-        """ Return children node list.
+        """ Return child node list if node is directory.
         """
         child_list = list()
         for _name in os.listdir(self.local_path):
@@ -157,7 +157,7 @@ class Node(object):
     
     @property
     def tree(self):
-        """ Return tree list for jstree.
+        """ Return recursive sub directory tree if node is directory.
         """
         node_tree = list()
         node_tree.append(dict(id=self.path, parent="#", text=self.name, state=dict(opened=True)))
