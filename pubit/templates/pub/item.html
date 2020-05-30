@@ -6,9 +6,6 @@
         <a href="{{url_for('pub.logout')}}">Sign out</a>
     </li>
 </ul>
-<ul class="nav navbar-form navbar-right">
-    <li><input name="search" type="text" placeholder="Search file in pub..." class="form-control"></li>
-</ul>
 {% endblock %}
 
 {% block main %}
@@ -17,16 +14,38 @@
 </div>
 
 <div class="main-content">
-    {% if pub.allow_upload %}
     <div class="pub-toolbar">
-        <button class="btn btn-sm btn-success" role="pub-upload">Upload</button>
+        {% if pub.allow_upload %}
+        <ul>
+            <li class="dropdown">
+                <a href="javascript:;" class="dropdown-toggle btn btn-primary" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    Upload<span class="caret"></span> 
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="javascript:;">File</a></li>
+                    <li><a href="javascript:;">Folder</a></li>
+                </ul>
+            </li>
+            <li><a id="create-new-folder" href="javascript:;" class="btn btn-default">New folder</a></li>
+        </ul>
+        {% endif %}
+        <form>
+            <input name="search" type="text" placeholder="Search file in pub..." class="form-control">
+        </form>
     </div>
-    {% endif %}
-    <div id="pub-path-nav" class="pub-path">
-        <!-- dynamic create path nav. -->
-    </div>
-    <div id="pub-nodes" class="pub-nodes">
-        <!-- dynamic load pub nodes to here. -->
+    
+    <div class="pub-main">
+        <div id="pub-path-nav" class="pub-path">
+            <!-- dynamic create path nav. -->
+        </div>
+        <div class="collapse-toolbar">
+            <button class="btn btn-xs btn-default">Delete</button>
+            <button class="btn btn-xs btn-default">Rename</button>
+            <button class="btn btn-xs btn-default">Download</button>
+        </div>
+        <div id="pub-nodes" class="pub-nodes">
+            <!-- dynamic load pub nodes to here. -->
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -73,27 +92,32 @@
 
         // requried function: load_nodes(url).
         show_nodes = function(nodes) {
-            var table = $("<table class='table'></table>");
-            var tab_head = $("<tr><td>Name</td><td>Type</td><td>Create time</td><td>Size</td></tr>");
+            var table = $("<div class='table-nodes'></div>");
+            var tab_head = $("<div class='table-nodes-row'>" +
+                                "<div class='table-nodes-col'>Name</div>" + 
+                                "<div class='table-nodes-col'>Type</div>" + 
+                                "<div class='table-nodes-col'>Create time</div>"+
+                                "<div class='table-nodes-col'>Size</div>"+
+                            "</div>");
             table.append(tab_head);
             for (i=0; i<nodes.length; i++) {
-                var item = $('<tr></tr>');
-                var type=$('<td>' + nodes[i].type[1] + '</td>');
-                var create = $('<td>' + nodes[i].create + '</td>');
+                var item = $("<div class='table-nodes-row'></div>");
+                var type=$("<div class='table-nodes-col'>" + nodes[i].type[1] + "</div>");
+                var create = $("<div class='table-nodes-col'>" + nodes[i].create + "</div>");
                 if (nodes[i].type[1].toLowerCase() === 'directory') {
                     var on_click = "onclick=\"load_nodes('"+ nodes[i].path + "');\"";
                     var href = $("<a href='javasrcipt:void(0)' "+ on_click + ">" + nodes[i].name + "</a>");
-                    var name = $('<td></td>');
+                    var name = $("<div class='table-nodes-col'></div>");
                     name.append(href);
                 } else {
                     //Downlaod link.
                     var uuid = "{{pub.uuid}}";
                     var path = nodes[i].path;
                     var href = $("<a href=\"/pub/download/"+uuid+"?path="+path+"\">" + nodes[i].name + "</a>");
-                    var name = $('<td></td>');
+                    var name = $("<div class='table-nodes-col'></div>");
                     name.append(href);
                 }
-                var size = $('<td>' + nodes[i].size + '</td>');
+                var size = $("<div class='table-nodes-col'>" + nodes[i].size + "</div>");
                 item.append(name);
                 item.append(type);
                 item.append(create);

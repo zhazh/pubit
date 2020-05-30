@@ -15,40 +15,42 @@
 </div>
 
 <div class="main-content">
-    <h4>Published folders.</h4>
-    <table class="table table-bordered">
-        <tr>
-            <td>#</td>
-            <td>Pub Time</td>
-            <td>Access</td>
-            <td>Name</td>
-            <td>Password</td>
-            <td>Description</td>
-            <td>Location</td>
-            <td>Allow upload</td>
-            <td>Operation</td>
-        </tr>
-        {% for pub in pubs %}
-        {% if pub.is_public %}
-        <tr class="success">
-        {% else %}
-        <tr class="danger">
-        {% endif %}
-            <td>{{loop.index}}</td>
-            <td>{{pub.standard_pubtime}}</td>
-            <td>{{pub.access}}</td>
-            <td>{{pub.name}}</td>
-            <td>{{pub.password or ''}}</td>
-            <td>{{pub.description}}</td>
-            <td>{{pub.location}}</td>
-            <td>{{pub.allow_upload}}</td>
-            <td>
-                <button class="btn btn-danger btn-xs" name="pub-delete" pub_id="{{pub.id}}">Delete</button>
-                <button class="btn btn-info btn-xs" name="pub-modify" pub_id={{pub.id}}>Modify</button>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+    <div class="admin-main">
+        <h4>Published folders.</h4>
+        <table class="table table-bordered">
+            <tr>
+                <td>#</td>
+                <td>Pub Time</td>
+                <td>Access</td>
+                <td>Name</td>
+                <td>Password</td>
+                <td>Description</td>
+                <td>Location</td>
+                <td>Allow upload</td>
+                <td>Operation</td>
+            </tr>
+            {% for pub in pubs %}
+            {% if pub.is_public %}
+            <tr class="success">
+            {% else %}
+            <tr class="danger">
+            {% endif %}
+                <td>{{loop.index}}</td>
+                <td>{{pub.standard_pubtime}}</td>
+                <td>{{pub.access}}</td>
+                <td>{{pub.name}}</td>
+                <td>{{pub.password or ''}}</td>
+                <td>{{pub.description}}</td>
+                <td>{{pub.location}}</td>
+                <td>{{pub.allow_upload}}</td>
+                <td>
+                    <button class="btn btn-danger btn-xs" name="pub-delete" pub_id="{{pub.id}}">Delete</button>
+                    <button class="btn btn-info btn-xs" name="pub-modify" pub_id={{pub.id}}>Modify</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 
     <!-- Pub folder modal -->
     <div id="md-pub-create" name="pub-create" class="modal fade" tabindex="-1" role="dialog">

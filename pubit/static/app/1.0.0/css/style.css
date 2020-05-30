@@ -1,3 +1,6 @@
+/*
+ * Global style.
+ */
 html body {
 	margin: 0;
 	height:100vh;
@@ -7,10 +10,46 @@ a, a:link, a:hover, a:visited, a:active {
 	text-decoration: none;
 }
 
-.error {
-	color: #d32f2f;
-}
+.error { color: #d32f2f; }
+.disappear { display: none; }
 
+/*
+ * main style.
+ * Pub page.
+ * =======================================
+ * <nav></nav>
+ * <div class="main">
+ *		<div class="sidebar"></div>
+ *		<div class="main-content">
+ *			<div class="pub-toolbar"></div>
+ *			<div class="pub-main">
+ *				<div class="pub-path"></div>
+ *				<div class="collapse-toolbar"></div>
+ *				<div class="pub-nodes"></div>
+ *			</div>
+ *		</div>
+ * </div>
+ * Admin page.
+ * =======================================
+ * <nav></nav>
+ * <div class="main">
+ *		<div class="sidebar"></div>
+ *		<div class="main-content">
+ *			<div class="admin-main">
+ *			</div>
+ *		</div>
+ * </div>
+ * Login page.
+ * ========================================
+ * <nav></nav>
+ * <div class="main">
+ *		<div></div>
+ *		<div class="login">
+ *			<form name="login">
+ *			</form>
+ *		</div>
+ * </div>
+ */
 .main {
 	height:100vh;
 	padding-top:50px;
@@ -26,7 +65,6 @@ a, a:link, a:hover, a:visited, a:active {
 }
 
 .main > div:last-child {
-	padding: 10px 15px;
 	flex-grow:1;
 	overflow-y:scroll;
 }
@@ -43,26 +81,98 @@ a, a:link, a:hover, a:visited, a:active {
 	padding: 5px 0;
 }
 
-.sidebar ul li a {
-	text-decoration: none;
+.main-content {
+	display: flex;
+	flex-direction: column;
 }
 
-.main-content {
+.main-content > div:last-child {
+	flex-grow:1;
+}
+
+.main-content > .admin-main {
+	padding: 5px 15px;
+}
+
+.main-content > .pub-toolbar {
+	height: 50px;
+	line-height: 50px;
+	padding: 0 15px;
+	background-color:#eee;
+	border-bottom:1px solid #bababa;
+	display: table-row;
+}
+
+.main-content > .pub-toolbar > * {
+	display: table-cell;
+	float: left;
+}
+
+.main-content > .pub-toolbar > ul {
+	padding: 0;
+	list-style:none;
+	font-size: 0;
+	-webkit-text-size-adjust:none;
+}
+
+.main-content > .pub-toolbar > ul > li {
+	display: inline-block;
+	font-size: 12px;
+	vertical-align: middle;
+	margin-right: 5px;
+}
+
+.main-content > .pub-toolbar > ul > li:last-child {
+	margin-right: 0;
+}
+
+.main-content > .pub-toolbar > form {
+	float: right;
+}
+
+.main-content > .pub-toolbar > form > input {
+	margin: 7px auto;
+}
+
+.main-content > .pub-main {
 	background-color: #fff;
 }
 
-.pub-path {
-	font-size: 16px;
+.main-content > .pub-main > .pub-path {
+	font-size: 10px;
+	border-bottom:1px solid #bababa;
 }
 
-.pub-toolbar {
-	padding: 10px 0;
+.breadcrumb {
+	padding: auto 15px;
+	margin: 0;
+	background-color:#eee;
 }
 
-.pub-nodes {
+.main-content > .pub-main .collapse-toolbar {
+	display: none;
+	padding: 5px 15px;
+	border-bottom:1px solid #bababa;
+	font-size: 10px;
+	background-color:#eee;
+}
+
+.main-content > .pub-main > .pub-nodes {
 	font-size: 14px;
 }
 
+.main-content > .pub-main > .pub-nodes > .table-nodes {
+	width: 100%;
+	display: table;
+}
+
+.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row {
+	display: table-row;
+}
+
+.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row > .table-nodes-col {
+	display: table-cell;
+}
 
 form[name=login] {
 	position: fixed;
@@ -79,20 +189,11 @@ form[name=login] input[type=text] {
 	margin: 10px 0;
 }
 
-form[name=new-pubitem] {
-	margin: auto;
-	width: 400px;
-}
-
 .modal-jstree {
 	border: 1px solid #ccc;
 	border-radius: 3px;
 	height: 160px;
 	overflow: scroll;
-}
-
-.disappear {
-	display: none;
 }
 
 /* for pad or mobile. */
