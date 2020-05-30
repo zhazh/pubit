@@ -1,181 +1,207 @@
 # -*- coding: utf-8 -*-
 """
 .service
-=================
-App middle service.
+========================
+Directory action service.
 """
 import os
-import time
-import codecs
-from datetime import datetime
-from flask import current_app
+from collections import defaultdict
+from shutil import (copy, copytree, move, rmtree, make_archive)
 
-def _unit_size(size):
-    """ Convert Byte size to KB/MB/GB/TB.
+class Message(object):
+    """ Message type support emitted with arguments.
     """
-    units = ['KB', 'MB', 'GB', 'TB']
-    i = 0
-    size = size / 1024
-    while size >= 1024 and i<(len(units)-1):
-        i = i + 1
-        size = size / 1024
-    return '%.2f %s'%(size, units[i])
+    def __init__(self, center, name):
+        self.name = name
+        self.center = center
 
-def _kb_size(size):
-    return '%.2f KB' %(size/1024)
-
-def _standard_timestr(localtime):
-    return time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(localtime))
-
-_TEXT_BOMS = (
-    codecs.BOM_UTF16_BE,
-    codecs.BOM_UTF16_LE,
-    codecs.BOM_UTF32_BE,
-    codecs.BOM_UTF32_LE,
-    codecs.BOM_UTF8,
-)
-
-def _is_binary_file(filepath):
-    with open(filepath, 'rb') as file:
-        initial_bytes = file.read(8192)
-        file.close()
-    return not any(initial_bytes.startswith(bom) for bom in _TEXT_BOMS) and b'\0' in initial_bytes
-
-class _File(object):
-    def __init__(self, filepath):
-        self.filepath = filepath
-
-    def typename(self):
-        try:
-            if os.path.isdir(self.filepath):
-                return 0, 'Directory'
-            else:
-                path, filename = os.path.split(self.filepath)
-                suffix = filename.split('.')[-1].lower()
-                if suffix in ('mp3', 'wav'):
-                    return 1, 'Audio File'
-                elif suffix in ('mp4', 'mov'):
-                    return 2, 'Video File'
-                else:
-                    if _is_binary_file(self.filepath):
-                        return 3, 'Binaray File'
-                    else:
-                        return 4, 'Text File'
-        except Exception as e:
-            return -1, 'Unknow File'
-
-class Node(object):
-    def __init__(self, base_dir=None, path='/'):
-        """ Create node attributes.
-            :attr base_dir:     absolute local path of base directory.
-            :attr path:         path relactive to base directory used web path style, such as '/', '/home', '/home/data'.
-            :attr name:         node name, root path name is 'Home'.
-            :attr local_path:   absolute local path of node.
-            :attr size:         node size.
-            :attr create:       node create time.
-            :attr visit:        node last visit time.
-            :attr modify:       node last modify time.
-            :attr type:         node type, such as 'directory', 'audio file'
+    def send(self, sender, **extra):
+        """ Emitted an message with arguments.
+            :param sender: describe who send the message.
+            :type sender: object.
         """
-        self.base_dir = os.path.normpath(base_dir if base_dir else current_app.config['ADMIN_HOME'])
-        if not os.path.isdir(self.base_dir):
-            raise TypeError("Invalid argument 'base_dir'")
-        
-        self.path = self._regulate_path(path)
-        if self.path == '/':
-            self.name = 'Home'
-        else:
-            self.name = os.path.split(self.path)[-1]
-        valid_path = list(filter(lambda p: p!='', self.path.split('/')))
-        self.local_path = os.path.join(self.base_dir, *valid_path)
-        if not os.path.exists(self.local_path):
-            raise TypeError("Invalid argument 'path'")
-        self._set_extra()
+        self.center._notify(self, sender, **extra)
 
-    def _regulate_path(self, path):
-        """ Regularize input path parameters.
-        """
-        path_list = path.split('/')
-        stack = list()
-        for p in path_list:
-            if p != '':
-                if p == '..':
-                    if len(stack) > 0:
-                        stack.pop()
-                else:
-                    stack.append(p)
-        if len(stack) == 0:
-            path = '/'
-        else:
-            path = ''
-            for p in stack:
-                path = path + '/' + p
-        return path
+class MessageCenter(object):
+    """ Hold message operation. 
+        - use :meth:`MessageCenter.message` to define an message type.
+        - use :meth:`MessageCenter.sub` for recipient to subscribe to the message.
+        - use :meth:`MessageCenter.clear_sub_on` to clear all recipients on the message.
+        - use :meth:`MessageCenter.cancel_sub_for` for the recipient to cancel message subscribed.
+    """
+    def __init__(self):
+        #: _dispatcher mapping messages and recipients.
+        self._dispatcher = defaultdict(list)
 
-    def _set_extra(self):
-        """ Set extra attributes after set attr `local_path`.
+    def message(self, name):
+        """ Define an message type.
+            :param name: message name.
+            :type name: string
         """
-        node_info = os.stat(self.local_path)
-        self.size = _unit_size(node_info.st_size)
-        self.create = _standard_timestr(node_info.st_ctime)
-        self.visit = _standard_timestr(node_info.st_atime)
-        self.modify = _standard_timestr(node_info.st_mtime)
-        self.type = _File(self.local_path).typename()
+        return Message(self, name)
 
-    @property
-    def layer_path(self):
-        """ Return list for path navigation
+    def sub(self, msg, recipient):
+        """ Recipient subscribe to message
+            :param msg: the :class: `Message` object to subscribe to.
+            :type msg: :class: `Message`
+            :param recipient: the object recived msg.
+            :type recipient: :object of subclass of :class: `Recipient` 
         """
-        paths = list()
-        if self.path == '/':
-            paths.append(dict(name='Home', path='/'))
-            return paths
-        path_names = self.path.split('/')
-        for i in range(len(path_names)):
-            _name = path_names[i]
-            if i == 0:
-                paths.append(dict(name='Home', path='/'))
-            else:
-                d = dict(name=_name, path='/'.join(path_names[:i+1]))
-                paths.append(d)
-        return paths
-
-    @property
-    def children(self):
-        """ Return child node list if node is directory.
-        """
-        child_list = list()
-        for _name in os.listdir(self.local_path):
-            if self.path == '/':
-                path = '/' + _name
-            else:
-                path = self.path + '/' + _name
-            node = Node(base_dir=self.base_dir, path=path)
-            child_list.append(node)
-        return child_list
+        if recipient not in self._dispatcher.keys():
+            self._dispatcher[msg].append(recipient)
     
-    @property
-    def tree(self):
-        """ Return recursive sub directory tree if node is directory.
+    def clear_sub_on(self, msg):
+        """ Clear all recipients on message :param:`msg`.
         """
-        node_tree = list()
-        node_tree.append(dict(id=self.path, parent="#", text=self.name, state=dict(opened=True)))
-        for root, dirs, files in os.walk(self.local_path):
-            for dname in dirs:
-                _suffix = root[len(self.local_path):].replace(os.path.sep, '/')
-                _parent = self.path + '/' + _suffix
-                if _suffix == '':
-                    _parent = self.path
-                else:
-                    if self.path =='/':
-                        _parent = _suffix
-                    else:
-                        _parent = self.path + _suffix
+        self._dispatcher[msg].clear()
+    
+    def cancel_sub_for(self, recipient):
+        """ Cancel subscribed messages for recipient.
+        """
+        for msg, recipients in self._dispatcher.items():
+            if recipient in recipients:
+                self._dispatcher[msg].remove(recipient)
 
-                if _parent == '/':
-                    _path = '/' + dname
-                else:
-                    _path = _parent + '/' + dname
-                d = dict(id=_path, parent=_parent, text=dname)
-                node_tree.append(d)
-        return node_tree
+    def _notify(self, msg, sender, **extra):
+        for recipient in self._dispatcher[msg]:
+            if isinstance(recipient, Recipient):
+                recipient._handle_msg(msg, sender, **extra)
+
+class Recipient(object):
+    """ Interface class described recipient.
+    """
+    def _handle_msg(self, message, sender, **extra):
+        try:
+            self.on_receive(sender, **extra)
+        except KeyError as e:
+            raise TypeError("send message:'%s' miss argument %s"%(message.name, e))
+    
+    def on_receive(self, sender, **extra):
+        pass
+
+class _TaskMeta(type):
+    def __new__(cls, name, bases, attrs):
+        if '_Task' in (base.__name__ for base in bases):
+            _msg_name = attrs.get('__msg_name__', None)
+            if _msg_name is None:
+                raise AttributeError("class '%s' has not class attribute '__msg_name__'"%name)
+            subclass = type.__new__(cls, name, bases, attrs)
+            _Task.__msg_map__[_msg_name] = subclass
+            return subclass
+        return type.__new__(cls, name, bases, attrs)
+
+class _Task(Recipient, metaclass=_TaskMeta):
+    __msg_map__ = dict()
+
+    @classmethod
+    def create(cls, name):
+        subclass = cls._msg_map().get(name, None)
+        if subclass:
+            return subclass()
+        return cls()
+
+    def on_receive(self, sender, **extra):
+        self.run(**extra)
+
+    def run(self, **kw):
+        pass
+
+    @classmethod
+    def _msg_map(cls):
+        return cls.__msg_map__
+
+class _TaskNew(_Task):
+    __msg_name__ = 'new'
+
+    def run(self, **kw):
+        target = kw["target"]
+        os.makedirs(target)
+
+class _TaskDelete(_Task):
+    __msg_name__ = 'delete'
+    
+    def run(self, **kw):
+        target = kw["target"]
+        if os.path.isdir(target):
+            rmtree(target)
+        else:
+            os.remove(target)
+
+class _TaskCopy(_Task):
+    __msg_name__ = 'copy'
+    
+    def run(self, **kw):
+        src = kw["src"]
+        dst = kw["dst"]
+        if os.path.isdir(src):
+            copytree(src, dst)
+        else:
+            copy(src, dst)
+
+class _TaskMove(_Task):
+    __msg_name__ = 'move'
+    
+    def run(self, **kw):
+        src = kw["src"]
+        dst = kw["dst"]
+        move(src, dst)
+
+class _TaskCompress(_Task):
+    __msg_name__ = 'compress'
+    
+    def run(self, **kw):
+        targets = kw["targets"]
+        dst_name = kw["dst_name"]
+        tmpdir = kw["temp_dir"]
+        dst_dir = os.path.join(tmpdir, dst_name)
+        os.makedirs(dst_dir)
+        for target in targets:
+            src = target
+            dst = dst_dir
+            if os.path.isdir(src):
+                dst = os.path.join(dst, os.path.split(src)[-1])
+                copytree(src, dst)
+            else:
+                copy(src, dst)
+        make_archive(dst_dir, "zip", root_dir=dst_dir)
+        rmtree(dst_dir)
+
+class Service(object):
+    node_messages = _Task._msg_map().keys()
+
+    def __init__(self):
+        self._center = MessageCenter()
+        self._msgs = dict()
+        for _msg_name in self.__class__.node_messages:
+            msg = self._center.message(_msg_name)
+            task = _Task.create(_msg_name)
+            self._center.sub(msg, task)
+            self._msgs[_msg_name] = msg
+
+    def send(self, msg_name, **extra):
+        try:
+            self._msgs[msg_name].send(self, **extra)
+        except KeyError:
+            raise TypeError("message name:'%s' not support"%msg_name)
+
+class GlobalService(object):
+    service = Service()
+
+    @classmethod
+    def send(cls, msg_name, **extra):
+        cls.service.send(msg_name, **extra)
+
+
+#: unit test.
+if __name__ == '__main__':
+    print('service test.')
+    GlobalService.send('copy', src="/home/zhazh/temp/home/1", dst="/home/zhazh/temp/bin_home/1")
+    #GlobalService.send('move', src="/home/zhazh/temp/1", dst="/home/zhazh/temp/mv/1")
+    #GlobalService.send('new', target='/home/zhazh/temp/good')
+    #GlobalService.send('new', target='/home/zhazh/temp/good/stuff')
+    #GlobalService.send('new', target='/home/zhazh/temp/good/stuff/guys')
+    #GlobalService.send('delete', target='/home/zhazh/temp/good/stuff/guys')
+    #GlobalService.send('copy', src="/home/zhazh/temp/good/stuff", dst="/home/zhazh/temp/stuff_copy")
+    #GlobalService.send('new', target='/home/zhazh/temp/good/mayday')
+    #GlobalService.send('move', src="/home/zhazh/temp/good/mayday", dst="/home/zhazh/temp/mayday")
+    #GlobalService.send('compress', targets=["/home/zhazh/temp/good", "/home/zhazh/temp/mayday"], dst_name="good_mayday", temp_dir="/home/zhazh/temp")

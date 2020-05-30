@@ -12,8 +12,7 @@ from flask import (
 )
 from sqlalchemy.exc import IntegrityError
 from pubit.decorators import admin_check, admin_authed, admin_login, admin_logout, admin_required
-from pubit.models import Pubitem
-from pubit.service import Node
+from pubit.models import Pubitem, Node
 from pubit.extensions import db
 from pubit.apis.decorators import admin_required
 from pubit.apis.resps import RespSuccess, RespServerWrong, RespArgumentWrong, RespUnauthenticated

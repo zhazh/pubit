@@ -13,7 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from pubit.forms import LoginForm
 from pubit.decorators import admin_check, admin_authed, admin_login, admin_logout, admin_required
 from pubit.models import Pubitem
-from pubit.service import Node
+from pubit.models import Node
 from pubit.extensions import db
 
 admin_bp = Blueprint('admin', __name__)
