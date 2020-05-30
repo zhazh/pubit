@@ -51,15 +51,15 @@ a, a:link, a:hover, a:visited, a:active {
 	background-color: #fff;
 }
 
-.pubs-path {
+.pub-path {
 	font-size: 16px;
 }
 
-.upload-toolbar {
+.pub-toolbar {
 	padding: 10px 0;
 }
 
-.pubs-list {
+.pub-nodes {
 	font-size: 14px;
 }
 

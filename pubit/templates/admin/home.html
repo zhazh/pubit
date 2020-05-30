@@ -305,7 +305,7 @@
                     form.find("input[name='id']").val(data.id);
                     form.find("input[name='name']").val(data.name);
                     form.find("input[name='description']").val(data.description);
-                    form.find("input[name='path']").val(data.path);
+                    form.find("input[name='path']").val(data.location);
                     if (data.access === 'public') {
                         form.find("input[name='access'][value='public']").prop("checked","checked");
                         form.find("div.password").addClass('disappear');
