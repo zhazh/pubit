@@ -39,9 +39,11 @@
             <!-- dynamic create path nav. -->
         </div>
         <div class="collapse-toolbar">
+            <button class="btn btn-xs btn-default">Download</button>
+            {% if pub.allow_upload %}
             <button class="btn btn-xs btn-default">Delete</button>
             <button class="btn btn-xs btn-default">Rename</button>
-            <button class="btn btn-xs btn-default">Download</button>
+            {% endif %}
         </div>
         <div id="pub-nodes" class="pub-nodes">
             <!-- dynamic load pub nodes to here. -->
@@ -93,7 +95,7 @@
         // requried function: load_nodes(url).
         show_nodes = function(nodes) {
             var table = $("<div class='table-nodes'></div>");
-            var tab_head = $("<div class='table-nodes-row'>" +
+            var tab_head = $("<div class='table-nodes-row table-nodes-head'>" +
                                 "<div class='table-nodes-col'>Name</div>" + 
                                 "<div class='table-nodes-col'>Type</div>" + 
                                 "<div class='table-nodes-col'>Create time</div>"+
@@ -101,22 +103,14 @@
                             "</div>");
             table.append(tab_head);
             for (i=0; i<nodes.length; i++) {
-                var item = $("<div class='table-nodes-row'></div>");
+                var uuid = "{{pub.uuid}}";
+                var path = nodes[i].path;
+                var node_type = nodes[i].type[1].toLowerCase();
+
+                var item = $("<div class='table-nodes-row' type='" + node_type + "' uuid='" + uuid + "' path='" + path + "'></div>");
+                var name = $("<div class='table-nodes-col'>" + nodes[i].name + "</div>");
                 var type=$("<div class='table-nodes-col'>" + nodes[i].type[1] + "</div>");
                 var create = $("<div class='table-nodes-col'>" + nodes[i].create + "</div>");
-                if (nodes[i].type[1].toLowerCase() === 'directory') {
-                    var on_click = "onclick=\"load_nodes('"+ nodes[i].path + "');\"";
-                    var href = $("<a href='javasrcipt:void(0)' "+ on_click + ">" + nodes[i].name + "</a>");
-                    var name = $("<div class='table-nodes-col'></div>");
-                    name.append(href);
-                } else {
-                    //Downlaod link.
-                    var uuid = "{{pub.uuid}}";
-                    var path = nodes[i].path;
-                    var href = $("<a href=\"/pub/download/"+uuid+"?path="+path+"\">" + nodes[i].name + "</a>");
-                    var name = $("<div class='table-nodes-col'></div>");
-                    name.append(href);
-                }
                 var size = $("<div class='table-nodes-col'>" + nodes[i].size + "</div>");
                 item.append(name);
                 item.append(type);
@@ -144,6 +138,29 @@
 
         // get root dirctory file and dir list.
         load_nodes("/");
+
+        // table-row click.
+        $("div.pub-nodes").on("click", ".table-nodes-row", function(e){
+            $(this).addClass('active');
+            $(this).siblings().removeClass('active');
+            $("div.collapse-toolbar").slideDown();
+        });
+
+        $("div.pub-main").on("click", function(e){
+            var ev = e || window.event;
+            var target = ev.target || ev.srcElement;
+            console.log($(target).parents().filter('.table-nodes-row'));
+        });
+
+        $("div.pub-nodes").on("dblclick", ".table-nodes-row", function(e){
+            var type = $(this).attr('type');
+            var url = $(this).attr('path');
+            if (type === 'directory') {
+                load_nodes(url);
+            } else {
+                // open support file type.
+            }
+        });
     });
 </script>
 {% endblock %}

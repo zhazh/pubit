@@ -164,14 +164,37 @@ a, a:link, a:hover, a:visited, a:active {
 .main-content > .pub-main > .pub-nodes > .table-nodes {
 	width: 100%;
 	display: table;
+	border-collapse: collapse;
 }
 
 .main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row {
 	display: table-row;
+	height: 30px;
+}
+
+.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row.table-nodes-head {
+	border: 1px solid #ccc;
+	background-color: #eee;
+}
+
+.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row:hover {
+	border: 1px solid #bbdefb;
+	background-color: #e3f2fd;
+}
+
+.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row.active {
+	border: 1px solid #bbdefb;
+	background-color: #90caf9;
 }
 
 .main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row > .table-nodes-col {
 	display: table-cell;
+	vertical-align: middle; 
+}
+
+.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row.table-nodes-head > .table-nodes-col {
+	border: 1px solid #ccc;
+	padding-left: 5px;
 }
 
 form[name=login] {
