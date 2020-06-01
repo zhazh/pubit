@@ -32,12 +32,12 @@ class PubAPI(MethodView):
     """
     decorators = [admin_required]
 
-    def get(self, pub_id=None):
+    def get(self, uuid=None):
         """ Return pub item description.
         """
         try:
             #pub_id = request.args.get('pub_id', None)
-            if pub_id is None:
+            if uuid is None:
                 # return pub items.
                 pubs = list()
                 for pub in Pubitem.query.order_by(Pubitem.pubtime.desc()).all():
@@ -45,10 +45,10 @@ class PubAPI(MethodView):
                 return jsonify(pubs)
             else:
                 # return single pub item.
-                pub = Pubitem.query.get(int(pub_id))
+                pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
                 if pub:
                     return jsonify(pub_schema(pub))
-                return RespArgumentWrong('pub_id').jsonify
+                return RespArgumentWrong('uuid').jsonify
         except Exception as e:
             current_app.logger.error(e)
             return RespServerWrong().jsonify
@@ -104,16 +104,13 @@ class PubAPI(MethodView):
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
-    def put(self, pub_id):
+    def put(self, uuid):
         """ Modify an pub item.
         """
         try:
-            pub_id = request.form.get('id', None)
-            if pub_id is None:
-                return RespArgumentWrong('id', 'missed').jsonify
-            pub = Pubitem.query.get(int(pub_id))
+            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
             if pub is None:
-                return RespArgumentWrong('id', 'not existed').jsonify
+                return RespArgumentWrong('uuid', 'not existed').jsonify
             
             pub_name = request.form.get('name', None)
             if pub_name is None:
@@ -153,23 +150,27 @@ class PubAPI(MethodView):
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
-    def delete(self, pub_id):
+    def delete(self, uuid):
         """ Delete an pub item.
         """
         try:
-            pub = Pubitem.query.get(int(pub_id))
+            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
             if pub:
                 db.session.delete(pub)
                 db.session.commit()
                 return RespSuccess().jsonify
-            return RespArgumentWrong('pub_id').jsonify
+            return RespArgumentWrong('uuid').jsonify
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
-class ItemAPI(MethodView):
+class NodeAPI(MethodView):
     def get(self, uuid):
+        """ List pub child nodes or root directory tree.
+            if request arg `path` is None, return root directory tree.
+            else return `path` directory children node.
+        """
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
             if pub is None:
@@ -196,7 +197,29 @@ class ItemAPI(MethodView):
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
+class SearchAPI(MethodView):
+    def get(self, uuid):
+        try:
+            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
+            if pub is None:
+                return RespArgumentWrong('uuid', 'invalid.').jsonify
+            if not pub.is_public:
+                #protected folder item.
+                session_pub = session.get('pub')
+                if session_pub is None or session_pub != uuid:
+                    return RespUnauthenticated().jsonify
+            
+            keywords = request.args.get('keywords', None)
+            if keywords is None:
+                return RespArgumentWrong('keywords', 'missed.')
+            node = Node(base_dir=pub.location, path='/')
+            return jsonify(node.search(keywords))
+        except Exception as e:
+            current_app.logger.error(e)
+            return RespServerWrong().jsonify
+
 api_v1.add_url_rule('/', view_func=IndexAPI.as_view('index'), methods=['GET'])
 api_v1.add_url_rule('/pub', view_func=PubAPI.as_view('pub'), methods=['GET', 'POST'])
-api_v1.add_url_rule('/pub/<int:pub_id>', view_func=PubAPI.as_view('pub_item'), methods=['GET', 'PUT', 'DELETE'])
-api_v1.add_url_rule('/item/<uuid>', view_func=ItemAPI.as_view('item'), methods=['GET'])
+api_v1.add_url_rule('/pub/<uuid>', view_func=PubAPI.as_view('pub_item'), methods=['GET', 'PUT', 'DELETE'])
+api_v1.add_url_rule('/pub/<uuid>/nodes', view_func=NodeAPI.as_view('nodes'), methods=['GET'])
+api_v1.add_url_rule('/pub/<uuid>/search', view_func=SearchAPI.as_view('search'), methods=['GET'])

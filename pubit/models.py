@@ -176,5 +176,22 @@ class Node(object):
                 node_tree.append(d)
         return node_tree
 
+        def search(self, keywords):
+            """ In this node search keywords.
+            """
+            node_list = list()
+            _keywords = list(filter(lambda s:len(s)>0, keywords.split()))
+            for root, dirs, files in os.walk(self.local_path):
+                for fname in files:
+                    for keyword in _keywords:
+                        if fname.find(keyword) != -1:
+                            f_local_path = os.path.join(root, fname)
+                            path = f_local_path[len(self.base_dir):].replace(os.path.sep, '/')
+                            if path == '':
+                                path = '/'
+                            node = Node(base_dir=self.base_dir, path=path)
+                            node_list.append(node)
+            return node_list
+
 
 

@@ -15,6 +15,9 @@
 
 <div class="main-content">
     <div class="pub-toolbar">
+        <ul>
+            <li><a name="nav-back" class="btn btn-default" href="javascript:void(0);">Back</a></li>
+        </ul>
         {% if pub.allow_upload %}
         <ul>
             <li class="dropdown">
@@ -26,23 +29,23 @@
                     <li><a href="javascript:;">Folder</a></li>
                 </ul>
             </li>
-            <li><a id="create-new-folder" href="javascript:;" class="btn btn-default">New folder</a></li>
+            <li><a name="create-folder" href="javascript:;" class="btn btn-default">New folder</a></li>
         </ul>
         {% endif %}
-        <form>
-            <input name="search" type="text" placeholder="Search file in pub..." class="form-control">
+        <form name="pub-search", method="GET">
+            <input name="keywords" type="text" placeholder="Search file in pub..." class="form-control" role="pub-search">
         </form>
     </div>
     
-    <div class="pub-main">
+    <div class="pub-main" uuid="{{pub.uuid}}">
         <div id="pub-path-nav" class="pub-path">
             <!-- dynamic create path nav. -->
         </div>
         <div class="collapse-toolbar">
-            <button class="btn btn-xs btn-default">Download</button>
+            <button class="btn btn-xs btn-default" role="download">Download</button>
             {% if pub.allow_upload %}
-            <button class="btn btn-xs btn-default">Delete</button>
-            <button class="btn btn-xs btn-default">Rename</button>
+            <button class="btn btn-xs btn-default" role="delete">Delete</button>
+            <button class="btn btn-xs btn-default" role="rename">Rename</button>
             {% endif %}
         </div>
         <div id="pub-nodes" class="pub-nodes">
@@ -58,14 +61,13 @@
         // pubitem directory select jstree initialize.
         $("div[name='pubitem-dir-tree']").jstree({
             'core' : {
-                'data' : {'asyn':true, 'url':"{{url_for('api.item', uuid=pub.uuid)}}"}
+                'data' : {'asyn':true, 'url':"{{url_for('api.nodes', uuid=pub.uuid)}}"}
             }
         });
         // pubitem directory select jstree changed.
         $("div[name='pubitem-dir-tree']").on("changed.jstree", function (e, data) {
             url = data.selected[0];
             load_nodes(url);
-            //$("form[name='pub-create']").find("input[name='path']").val(url);
         });
 
         update_path_nav = function(url) {
@@ -122,37 +124,71 @@
             $("#pub-nodes").append(table);
         };
 
+        var url_stack = new Array();
         load_nodes = function(url) {
             $('#pubs-dir-path').empty();
             $('#pubs-dir-path').append(url);
             update_path_nav(url);
             $.get(
-                "{{url_for('api.item', uuid=pub.uuid)}}",
+                "{{url_for('api.nodes', uuid=pub.uuid)}}",
                 {path: url},
                 function(nodes){
                     show_nodes(nodes);
                 }, 
                 "json"
             );
+            url_stack.push(url);
+            if (url_stack.length<2) {
+                $("a[name='nav-back']").addClass('disabled');
+            } else {
+                $("a[name='nav-back']").removeClass('disabled');
+            }
         };
 
         // get root dirctory file and dir list.
         load_nodes("/");
 
-        // table-row click.
-        $("div.pub-nodes").on("click", ".table-nodes-row", function(e){
-            $(this).addClass('active');
-            $(this).siblings().removeClass('active');
-            $("div.collapse-toolbar").slideDown();
+        $("a[name='nav-back']").on('click', function(){
+            if (url_stack.length >= 2) {
+                url_stack.pop();    // current page.
+                var url = url_stack.pop();
+                load_nodes(url);
+            }
         });
+
+        $("form[name='pub-search']").on("submit", function(e){
+            console.log("pub-search submit");
+            e.stopPropagation();
+        });
+
 
         $("div.pub-main").on("click", function(e){
             var ev = e || window.event;
             var target = ev.target || ev.srcElement;
-            console.log($(target).parents().filter('.table-nodes-row'));
+            if ($(target).is('.table-nodes-col')) {
+                // table-row clicked.
+                var row = $(target).parent();
+                if ($(row).hasClass('table-nodes-head')) {
+                    // skip table-nodes-head.
+                    return;
+                }
+                $(row).addClass('active');
+                $(row).siblings().removeClass('active');
+                $("div.collapse-toolbar").slideDown();
+            } else {
+                if ($(target).is(".collapse-toolbar")) {
+                    // skip .collapse-toolbar click.
+                    return;
+                }
+                $("div.collapse-toolbar").slideUp();
+            }
         });
 
         $("div.pub-nodes").on("dblclick", ".table-nodes-row", function(e){
+            if ($(this).hasClass('table-nodes-head')) {
+                // skip: .table-nodes-head.
+                return;
+            }
             var type = $(this).attr('type');
             var url = $(this).attr('path');
             if (type === 'directory') {
@@ -160,6 +196,24 @@
             } else {
                 // open support file type.
             }
+        });
+
+        $("button[role='download']").on("click", function(e){
+            var selected_row = $("div.table-nodes").children(".active");
+            if (selected_row.length == 1) {
+                var type = $(selected_row).attr("type");
+                var uuid = $(selected_row).attr("uuid");
+                var path = $(selected_row).attr("path");
+                if (type === "directory") {
+                    // directory download.
+                } else {
+                    // file download.
+                    window.location.href = "/pub/download/"+uuid+"?path="+path;
+                }
+            } else {
+                alert("Unselected item!");
+            }
+            e.stopPropagation();
         });
     });
 </script>

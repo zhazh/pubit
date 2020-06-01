@@ -190,11 +190,11 @@ a, a:link, a:hover, a:visited, a:active {
 .main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row > .table-nodes-col {
 	display: table-cell;
 	vertical-align: middle; 
+	padding-left: 15px;
 }
 
 .main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row.table-nodes-head > .table-nodes-col {
 	border: 1px solid #ccc;
-	padding-left: 5px;
 }
 
 form[name=login] {

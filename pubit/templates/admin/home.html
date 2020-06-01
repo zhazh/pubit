@@ -44,8 +44,8 @@
                 <td>{{pub.location}}</td>
                 <td>{{pub.allow_upload}}</td>
                 <td>
-                    <button class="btn btn-danger btn-xs" name="pub-delete" pub_id="{{pub.id}}">Delete</button>
-                    <button class="btn btn-info btn-xs" name="pub-modify" pub_id={{pub.id}}>Modify</button>
+                    <button class="btn btn-danger btn-xs" name="pub-delete" uuid="{{pub.uuid}}">Delete</button>
+                    <button class="btn btn-info btn-xs" name="pub-modify" uuid={{pub.uuid}}>Modify</button>
                 </td>
             </tr>
             {% endfor %}
@@ -121,7 +121,7 @@
                 </div>
                 <div class="modal-body">
                     <form name="pub-modify">
-                        <input name="id" type="hidden" class="form-control">
+                        <input name="uuid" type="hidden" class="form-control">
                         <div class="form-group">
                             <label>Pub name</label>
                             <input name="name" type="text" class="form-control" placeholder="Pub name">
@@ -236,9 +236,9 @@
                 e.preventDefault();
                 return;
             }
-            var pub_id = $(this).find("input[name='id']").val();
+            var uuid = $(this).find("input[name='uuid']").val();
             $.ajax({
-                    url: "/api/pub/" + pub_id,
+                    url: "/api/pub/" + uuid,
                     type: "put",
                     dataType:"json",
                     data: $(this).serialize(),
@@ -255,10 +255,10 @@
 
         // delete an pub.
         $("button[name='pub-delete']").on('click', function(){
-            var pub_id = $(this).attr('pub_id');
+            var uuid = $(this).attr('uuid');
             if (confirm('Are you sure delete this pub?')) {
                 $.ajax({
-                    url: "/api/pub/" + pub_id,
+                    url: "/api/pub/" + uuid,
                     type: "delete",
                     dataType:"json",
                     success: function(data){
@@ -299,12 +299,12 @@
         // get an pub for modify.
         $("button[name='pub-modify']").on('click', function(){
             // show pub-modify modal and get value.
-            var pub_id = $(this).attr('pub_id');
+            var uuid = $(this).attr('uuid');
             $.get(
-                "/api/pub/" + pub_id,
+                "/api/pub/" + uuid,
                 function(data){
                     var form = $("form[name='pub-modify']");
-                    form.find("input[name='id']").val(data.id);
+                    form.find("input[name='uuid']").val(data.uuid);
                     form.find("input[name='name']").val(data.name);
                     form.find("input[name='description']").val(data.description);
                     form.find("input[name='path']").val(data.location);
