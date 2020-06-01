@@ -5,8 +5,6 @@
 Provide resources for ajax request.
 """
 
-from pubit.models import Pubitem
-
 def pub_schema(pubitem):
     return dict(
         id = pubitem.id,
@@ -25,6 +23,7 @@ def node_schema(nodeitem):
         create = nodeitem.create,
         name = nodeitem.name,
         path = nodeitem.path,
+        parent_path = nodeitem.parent_path,
         size = nodeitem.size,
         type = nodeitem.type,
     )

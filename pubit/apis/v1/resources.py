@@ -208,12 +208,15 @@ class SearchAPI(MethodView):
                 session_pub = session.get('pub')
                 if session_pub is None or session_pub != uuid:
                     return RespUnauthenticated().jsonify
-            
+
             keywords = request.args.get('keywords', None)
             if keywords is None:
                 return RespArgumentWrong('keywords', 'missed.')
             node = Node(base_dir=pub.location, path='/')
-            return jsonify(node.search(keywords))
+            node_list = list()
+            for nd in node.search(keywords):
+                node_list.append(node_schema(nd))
+            return jsonify(node_list)
         except Exception as e:
             current_app.logger.error(e)
             return RespServerWrong().jsonify

@@ -65,6 +65,7 @@ class Node(object):
         """ Create node attributes.
             :attr base_dir:     absolute local path of base directory.
             :attr path:         path relactive to base directory used web path style, such as '/', '/home', '/home/data'.
+            :attr parent_path:  parent directory relactive path.
             :attr name:         node name, root path name is 'Home'.
             :attr local_path:   absolute local path of node.
             :attr size:         node size.
@@ -79,9 +80,10 @@ class Node(object):
         
         self.path = self._regulate_path(path)
         if self.path == '/':
-            self.name = 'Home'
+            self.name = 'Home'          # root path name is 'Home'
+            self.parent_path = None     # root path parent path is None.
         else:
-            self.name = os.path.split(self.path)[-1]
+            self.parent_path , self.name = os.path.split(self.path)
         valid_path = list(filter(lambda p: p!='', self.path.split('/')))
         self.local_path = os.path.join(self.base_dir, *valid_path)
         if not os.path.exists(self.local_path):
@@ -176,22 +178,19 @@ class Node(object):
                 node_tree.append(d)
         return node_tree
 
-        def search(self, keywords):
-            """ In this node search keywords.
-            """
-            node_list = list()
-            _keywords = list(filter(lambda s:len(s)>0, keywords.split()))
-            for root, dirs, files in os.walk(self.local_path):
-                for fname in files:
-                    for keyword in _keywords:
-                        if fname.find(keyword) != -1:
-                            f_local_path = os.path.join(root, fname)
-                            path = f_local_path[len(self.base_dir):].replace(os.path.sep, '/')
-                            if path == '':
-                                path = '/'
-                            node = Node(base_dir=self.base_dir, path=path)
-                            node_list.append(node)
-            return node_list
-
-
-
+    def search(self, keywords):
+        """ Search keywords in this node, return matched nodes list.
+        """
+        node_list = list()
+        _keywords = list(filter(lambda s:len(s)>0, keywords.split()))
+        for root, dirs, files in os.walk(self.local_path):
+            for fname in files:
+                for keyword in _keywords:
+                    if fname.find(keyword) != -1:
+                        f_local_path = os.path.join(root, fname)
+                        path = f_local_path[len(self.base_dir):].replace(os.path.sep, '/')
+                        if path == '':
+                            path = '/'
+                        node = Node(base_dir=self.base_dir, path=path)
+                        node_list.append(node)
+        return node_list
