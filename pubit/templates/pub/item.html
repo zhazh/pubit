@@ -31,7 +31,7 @@
             {% endif %}
         </ul>
         <form name="pub-search", method="GET">
-            <input name="keywords" type="text" placeholder="Search file in pub..." class="form-control" role="pub-search">
+            <input name="keywords" type="text" placeholder="Search file in pub..." class="form-control">
         </form>
     </div>
     
@@ -93,14 +93,27 @@
         };
 
         // requried function: load_nodes(url).
-        show_nodes = function(nodes) {
+        // nodes: node array.
+        // style: 0: show node list(default), 1: show search result.
+        show_nodes = function(nodes, style) {
+            style = style || 0;
             var table = $("<div class='table-nodes'></div>");
-            var tab_head = $("<div class='table-nodes-row table-nodes-head'>" +
-                                "<div class='table-nodes-col'>Name</div>" + 
-                                "<div class='table-nodes-col'>Type</div>" + 
-                                "<div class='table-nodes-col'>Create time</div>"+
-                                "<div class='table-nodes-col'>Size</div>"+
-                            "</div>");
+            
+            var tab_head = $("<div class='table-nodes-row table-nodes-head'></div>");
+
+            var dir_head = $("<div class='table-nodes-col'>Directory</div>");
+            var name_head = $("<div class='table-nodes-col'>Name</div>");
+            var type_head = $("<div class='table-nodes-col'>Type</div>");
+            var create_head = $("<div class='table-nodes-col'>Create time</div>");
+            var size_head = $("<div class='table-nodes-col'>Size</div>");
+
+            if (style == 1) {
+                tab_head.append(dir_head);
+            }
+            tab_head.append(name_head);
+            tab_head.append(type_head);
+            tab_head.append(create_head);
+            tab_head.append(size_head);
             table.append(tab_head);
             for (i=0; i<nodes.length; i++) {
                 var uuid = "{{pub.uuid}}";
@@ -108,10 +121,15 @@
                 var node_type = nodes[i].type[1].toLowerCase();
 
                 var item = $("<div class='table-nodes-row' type='" + node_type + "' uuid='" + uuid + "' path='" + path + "'></div>");
+                var directory = $("<div class='table-nodes-col'>" + "<a href='javascript:void(0);' path='" + nodes[i].parent_path + "' name='parent-path'>" + nodes[i].parent_path + "</a>" + "</div>");
                 var name = $("<div class='table-nodes-col'>" + nodes[i].name + "</div>");
                 var type=$("<div class='table-nodes-col'>" + nodes[i].type[1] + "</div>");
                 var create = $("<div class='table-nodes-col'>" + nodes[i].create + "</div>");
                 var size = $("<div class='table-nodes-col'>" + nodes[i].size + "</div>");
+                
+                if (style == 1) {
+                    item.append(directory);
+                }
                 item.append(name);
                 item.append(type);
                 item.append(create);
@@ -154,9 +172,23 @@
             }
         });
 
-        // pub search.
+        // search files in this pub.
         $("form[name='pub-search']").on("submit", function(e){
-            console.log("pub-search submit");
+            $.get(
+                "{{url_for('api.search', uuid=pub.uuid)}}",
+                $(this).serialize(),
+                function(nodes){
+                    show_nodes(nodes, 1);
+                    $("input[name='keywords']").val('');
+                }, 
+                "json"
+            );
+            return false;
+        });
+
+        $("div.pub-nodes").on("click", "a[name='parent-path']", function(e){
+            var path = $(this).attr('path');
+            load_nodes(path);
             e.stopPropagation();
         });
 
@@ -183,6 +215,7 @@
             }
         });
 
+        // double click to open node(play audio/video).
         $("div.pub-nodes").on("dblclick", ".table-nodes-row", function(e){
             if ($(this).hasClass('table-nodes-head')) {
                 // skip: .table-nodes-head.
