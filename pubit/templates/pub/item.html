@@ -17,9 +17,7 @@
     <div class="pub-toolbar">
         <ul>
             <li><a name="nav-back" class="btn btn-default" href="javascript:void(0);">Back</a></li>
-        </ul>
-        {% if pub.allow_upload %}
-        <ul>
+            {% if pub.allow_upload %}
             <li class="dropdown">
                 <a href="javascript:;" class="dropdown-toggle btn btn-primary" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                     Upload<span class="caret"></span> 
@@ -30,8 +28,8 @@
                 </ul>
             </li>
             <li><a name="create-folder" href="javascript:;" class="btn btn-default">New folder</a></li>
+            {% endif %}
         </ul>
-        {% endif %}
         <form name="pub-search", method="GET">
             <input name="keywords" type="text" placeholder="Search file in pub..." class="form-control" role="pub-search">
         </form>
