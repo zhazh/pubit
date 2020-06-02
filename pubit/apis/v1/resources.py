@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from pubit.decorators import admin_check, admin_authed, admin_login, admin_logout, admin_required
 from pubit.models import Pubitem, Node
 from pubit.extensions import db
+from pubit.service import Service
 from pubit.apis.decorators import admin_required
 from pubit.apis.resps import RespSuccess, RespServerWrong, RespArgumentWrong, RespUnauthenticated
 from pubit.apis.v1 import api_v1
@@ -165,7 +166,7 @@ class PubAPI(MethodView):
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
-class NodeAPI(MethodView):
+class NodesAPI(MethodView):
     def get(self, uuid):
         """ List pub child nodes or root directory tree.
             if request arg `path` is None, return root directory tree.
@@ -197,6 +198,110 @@ class NodeAPI(MethodView):
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
+class NodeAPI(MethodView):
+    def get(self, uuid):
+        """ Return node description.
+        """
+        try:
+            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
+            if pub is None:
+                return RespArgumentWrong('uuid', 'invalid.').jsonify
+            if not pub.is_public:
+                #protected folder item.
+                session_pub = session.get('pub')
+                if session_pub is None or session_pub != uuid:
+                    return RespUnauthenticated().jsonify
+            
+            path = request.args.get('path', None)
+            if path is None:
+                return RespArgumentWrong('path', 'missed')
+            else:
+                node = Node(base_dir=pub.location, path=path)
+                return jsonify(node_schema(node))
+        except Exception as e:
+            current_app.logger.error(e)
+            return RespServerWrong().jsonify
+
+    def post(self, uuid):
+        """ Create new folder node.
+        """
+        try:
+            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
+            if pub is None:
+                return RespArgumentWrong('uuid', 'invalid.').jsonify
+            if not pub.is_public:
+                #protected folder item.
+                session_pub = session.get('pub')
+                if session_pub is None or session_pub != uuid:
+                    return RespUnauthenticated().jsonify
+            
+            path = request.args.get('path', None)
+            if path is None:
+                return RespArgumentWrong('path', 'missed')
+            else:
+                #: Return pub item sub directory(path) file and directory.
+                node = Node(base_dir=pub.location, path=path)
+                Service().send('new', target=node.local_path)
+                return RespSuccess().jsonify
+        except Exception as e:
+            current_app.logger.error(e)
+            return RespServerWrong().jsonify
+    
+    def put(self, uuid):
+        """ Modify an node name.
+        """
+        try:
+            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
+            if pub is None:
+                return RespArgumentWrong('uuid', 'invalid.').jsonify
+            if not pub.is_public:
+                #protected folder item.
+                session_pub = session.get('pub')
+                if session_pub is None or session_pub != uuid:
+                    return RespUnauthenticated().jsonify
+            
+            path = request.args.get('path', None)
+            if path is None:
+                return RespArgumentWrong('path', 'missed')
+
+            name = request.args.get('name', None)
+            if name is None:
+                return RespArgumentWrong('name', 'missed')
+
+            node = Node(base_dir=pub.location, path=path)
+            _dir, _name = os.path.split(node.local_path)
+            Service().send('move', src=node.local_path, dst=os.path.join(_dir, name))
+            return RespSuccess().jsonify
+        except Exception as e:
+            current_app.logger.error(e)
+            return RespServerWrong().jsonify
+
+    def delete(self, uuid):
+        """ Delete an node(folder/path)
+        """
+        try:
+            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
+            if pub is None:
+                return RespArgumentWrong('uuid', 'invalid.').jsonify
+            if not pub.is_public:
+                #protected folder item.
+                session_pub = session.get('pub')
+                if session_pub is None or session_pub != uuid:
+                    return RespUnauthenticated().jsonify
+            
+            path = request.args.get('path', None)
+            if path is None:
+                return RespArgumentWrong('path', 'missed')
+            else:
+                #: Return pub item sub directory(path) file and directory.
+                node = Node(base_dir=pub.location, path=path)
+                Service().send('delete', target=node.local_path)
+                return RespSuccess().jsonify
+        except Exception as e:
+            current_app.logger.error(e)
+            return RespServerWrong().jsonify
+
+
 class SearchAPI(MethodView):
     def get(self, uuid):
         try:
@@ -224,5 +329,6 @@ class SearchAPI(MethodView):
 api_v1.add_url_rule('/', view_func=IndexAPI.as_view('index'), methods=['GET'])
 api_v1.add_url_rule('/pub', view_func=PubAPI.as_view('pub'), methods=['GET', 'POST'])
 api_v1.add_url_rule('/pub/<uuid>', view_func=PubAPI.as_view('pub_item'), methods=['GET', 'PUT', 'DELETE'])
-api_v1.add_url_rule('/pub/<uuid>/nodes', view_func=NodeAPI.as_view('nodes'), methods=['GET'])
+api_v1.add_url_rule('/pub/<uuid>/nodes', view_func=NodesAPI.as_view('nodes'), methods=['GET'])
+api_v1.add_url_rule('/pub/<uuid>/node', view_func=NodeAPI.as_view('node'), methods=['GET', 'POST', 'PUT', 'DELETE'])
 api_v1.add_url_rule('/pub/<uuid>/search', view_func=SearchAPI.as_view('search'), methods=['GET'])
