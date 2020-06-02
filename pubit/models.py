@@ -52,11 +52,13 @@ class _File(object):
                     return 1, 'Audio File'
                 elif suffix in ('mp4', 'mov'):
                     return 2, 'Video File'
+                elif suffix in ('jpg', 'bmp', 'gif', 'png'):
+                    return 3, 'Photo'
                 else:
                     if is_binary_file(self.filepath):
-                        return 3, 'Binaray File'
+                        return 4, 'Binaray File'
                     else:
-                        return 4, 'Text File'
+                        return 5, 'Text File'
         except Exception as e:
             return -1, 'Unknow File'
 

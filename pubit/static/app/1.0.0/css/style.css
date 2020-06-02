@@ -198,6 +198,67 @@ a, a:link, a:hover, a:visited, a:active {
 	border: 1px solid #ccc;
 }
 
+.modal[name=open-text] > .modal-dialog {
+    position: absolute; 
+    top: 0; 
+    bottom: 0; 
+    left: 0; 
+	right: 0; 
+}
+
+.modal[name=open-text] > .modal-dialog > .modal-content {
+    position: absolute; 
+    top: 0; 
+    bottom: 0; 
+	width: 100%; 
+	background-color: #0288d1;
+	border-radius: 0;
+}
+
+.modal[name=open-text] > .modal-dialog > .modal-content > .modal-header {
+	height: 40px;
+	border-bottom: 1px solid #0277bd;
+	color: #fff;
+}
+
+.modal[name=open-text] > .modal-dialog > .modal-content > .modal-body {
+	background-color: #ddd;
+    overflow-y: scroll; 
+    position: absolute; 
+    top: 40px; 
+    bottom: 0; 
+    width: 100%; 
+}
+
+.modal[name=open-text] > .modal-dialog > .modal-content {
+	font-size: 10px;
+	line-height: 10px;
+}
+
+.modal[name=audio-player] > .modal-dialog {
+	width: 500px;
+}
+
+.modal[name=audio-player] > .modal-dialog audio {
+	width: 100%;
+}
+
+.modal[name=video-player] > .modal-dialog {
+	width: 500px;
+}
+
+.modal[name=video-player] > .modal-dialog video {
+	width: 100%;
+}
+
+.modal[name=image] > .modal-dialog {
+	width: 500px;
+}
+
+.modal[name=image] > .modal-dialog img {
+	width: 100%;
+}
+
 form[name=login] {
 	position: fixed;
 	top: 180px;

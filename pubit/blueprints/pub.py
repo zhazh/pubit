@@ -74,3 +74,30 @@ def download(uuid):
     except Exception as e:
         current_app.logger.error(e)
         abort(500)
+
+@pub_bp.route('/text/<uuid>')
+def text(uuid):
+    pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
+    path = request.args.get('path', None)
+    if pub is None or path is None:
+        abort(404)
+    if not pub.is_public:
+        # protected.
+        session_pub = session.get('pub', None)
+        if session_pub is None or session_pub != uuid:
+            return redirect(url_for('pub.login'))
+    try:
+        node = Node(base_dir=pub.location, path=path)
+        if not os.path.isfile(node.local_path):
+            raise TypeError("path:'%s' not an file"%path)
+        html_text = ''
+        with open(node.local_path) as f:
+            for line in f:
+                line = line.replace(" ", "&nbsp;")
+                line = line.replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;")
+                html = '<p>%s</p>'%line
+                html_text = html_text + html
+        return html_text
+    except Exception as e:
+        current_app.logger.error(e)
+        abort(500)

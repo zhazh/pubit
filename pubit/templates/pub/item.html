@@ -55,6 +55,7 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h5 class="modal-title"></h5>
                     </div>
                     <div class="modal-body">
                         <!-- dynamic load content. -->
@@ -62,6 +63,37 @@
                 </div><!-- /.modal-content -->
             </div><!-- /.modal-dialog -->
         </div><!-- /.modal -->
+
+        <div name="audio-player" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <audio name="audio-player" src="" controls="controls" autoplay></audio>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+
+        <div name="video-player" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <video name="video-player" src="" controls="controls" autoplay></video>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+
+        <div name="image" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <img src="" />
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+
     </div>
 </div>
 {% endblock %}
@@ -132,8 +164,9 @@
                 var uuid = "{{pub.uuid}}";
                 var path = nodes[i].path;
                 var node_type = nodes[i].type[1].toLowerCase();
+                var node_name = nodes[i].name;
 
-                var item = $("<div class='table-nodes-row' type='" + node_type + "' uuid='" + uuid + "' path='" + path + "'></div>");
+                var item = $("<div class='table-nodes-row' type='" + node_type + "' uuid='" + uuid + "' path='" + path + "' name='" + node_name + "'></div>");
                 var directory = $("<div class='table-nodes-col'>" + "<a href='javascript:void(0);' path='" + nodes[i].parent_path + "' name='parent-path'>" + nodes[i].parent_path + "</a>" + "</div>");
                 var name = $("<div class='table-nodes-col'>" + nodes[i].name + "</div>");
                 var type=$("<div class='table-nodes-col'>" + nodes[i].type[1] + "</div>");
@@ -234,29 +267,47 @@
                 // skip: .table-nodes-head.
                 return;
             }
+            var name = $(this).attr('name');
             var type = $(this).attr('type');
             var uuid = $(this).attr("uuid");
             var url = $(this).attr('path');
+            console.log(name);
             if (type === 'directory') {
                 load_nodes(url);
             } else {
                 // open support file type.
                 if (type === 'text file') {
                     // open text file.
-                    $.get("/pub/download/"+uuid+"?path="+url,
+                    $.get("/pub/text/"+uuid+"?path="+url,
                         function(data,status){
                             var content = $('<div>' + data + '</div>');
+                            $(".modal[name='open-text']").children('.modal-dialog').children('.modal-content').children('.modal-header').children('.modal-title').html(name);
+                            $(".modal[name='open-text']").children('.modal-dialog').children('.modal-content').children('.modal-body').empty();
                             $(".modal[name='open-text']").children('.modal-dialog').children('.modal-content').children('.modal-body').append(content);
                             $(".modal[name='open-text']").modal('show');     
                     });
                 } else if (type === 'audio file') {
-
+                    var download_url = "/pub/download/"+uuid+"?path="+url;
+                    $(".modal[name='audio-player']").children('.modal-dialog').children('.modal-content').children('.modal-body').children('audio').attr('src', download_url);
+                    $(".modal[name='audio-player']").modal('show'); 
                 } else if (type === 'video file') {
-
+                    var download_url = "/pub/download/"+uuid+"?path="+url;
+                    $(".modal[name='video-player']").children('.modal-dialog').children('.modal-content').children('.modal-body').children('video').attr('src', download_url);
+                    $(".modal[name='video-player']").modal('show');
                 } else if (type === 'photo') {
-                    
+                    var download_url = "/pub/download/"+uuid+"?path="+url;
+                    $(".modal[name='image']").children('.modal-dialog').children('.modal-content').children('.modal-body').children('img').attr('src', download_url);
+                    $(".modal[name='image']").modal('show');
                 }
             }
+        });
+
+        $(".modal[name='audio-player']").on("hide.bs.modal", function(e){
+            $(".modal[name='audio-player']").children('.modal-dialog').children('.modal-content').children('.modal-body').children('audio')[0].pause();
+        });
+
+        $(".modal[name='video-player']").on("hide.bs.modal", function(e){
+            $(".modal[name='video-player']").children('.modal-dialog').children('.modal-content').children('.modal-body').children('video')[0].pause();
         });
 
         $("button[role='download']").on("click", function(e){
