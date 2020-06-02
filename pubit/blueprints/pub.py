@@ -11,6 +11,7 @@ from flask import (
 )
 from pubit.forms import PubAuthForm
 from pubit.models import Pubitem, Node
+from pubit.service import Service
 
 pub_bp = Blueprint('pub', __name__)
 
@@ -64,13 +65,23 @@ def download(uuid):
             return redirect(url_for('pub.login'))
     try:
         node = Node(base_dir=pub.location, path=path)
-        if not os.path.isfile(node.local_path):
-            raise TypeError("path:'%s' not an file"%path)
-        _path, _filename = os.path.split(node.local_path)
-        current_app.logger.info("download file: '%s'"%node.local_path)
-        response = make_response(send_from_directory(_path, filename=_filename, as_attachment=True))
-        response.headers["Content-Disposition"] = "attachment; filename={}".format(_filename.encode().decode('latin-1'))
-        return response
+        if os.path.isdir(node.local_path):
+            temp_dir = current_app.config['TEMP_DIR']
+            _path, _filename = os.path.split(node.local_path)
+            Service().send('compress', targets=[node.local_path], dst_name=_filename, temp_dir=temp_dir)
+            zip_name = "%s.zip"%_filename
+            zip_path = os.path.join(temp_dir, zip_name)
+            current_app.logger.info("download directory: '%s'"%node.local_path)
+            current_app.logger.info("download directory zip: '%s'"%zip_path)
+            response = make_response(send_from_directory(temp_dir, filename=zip_name, as_attachment=True))
+            response.headers["Content-Disposition"] = "attachment; filename={}".format(zip_name.encode().decode('latin-1'))
+            return response
+        else:
+            _path, _filename = os.path.split(node.local_path)
+            current_app.logger.info("download file: '%s'"%node.local_path)
+            response = make_response(send_from_directory(_path, filename=_filename, as_attachment=True))
+            response.headers["Content-Disposition"] = "attachment; filename={}".format(_filename.encode().decode('latin-1'))
+            return response
     except Exception as e:
         current_app.logger.error(e)
         abort(500)

@@ -171,6 +171,7 @@ a, a:link, a:hover, a:visited, a:active {
 	display: table-row;
 	height: 30px;
 	border: 1px solid #fff;
+	cursor: default;
 }
 
 .main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row.table-nodes-head {

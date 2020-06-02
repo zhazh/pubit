@@ -298,6 +298,8 @@
                     var download_url = "/pub/download/"+uuid+"?path="+url;
                     $(".modal[name='image']").children('.modal-dialog').children('.modal-content').children('.modal-body').children('img').attr('src', download_url);
                     $(".modal[name='image']").modal('show');
+                } else {
+                    alert("Not support open.");
                 }
             }
         });
@@ -318,6 +320,7 @@
                 var path = $(selected_row).attr("path");
                 if (type === "directory") {
                     // directory download.
+                    window.location.href = "/pub/download/"+uuid+"?path="+path;
                 } else {
                     // file download.
                     window.location.href = "/pub/download/"+uuid+"?path="+path;
