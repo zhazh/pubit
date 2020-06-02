@@ -49,6 +49,19 @@
         <div id="pub-nodes" class="pub-nodes">
             <!-- dynamic load pub nodes to here. -->
         </div>
+
+        <div name="open-text" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- dynamic load content. -->
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
     </div>
 </div>
 {% endblock %}
@@ -222,11 +235,27 @@
                 return;
             }
             var type = $(this).attr('type');
+            var uuid = $(this).attr("uuid");
             var url = $(this).attr('path');
             if (type === 'directory') {
                 load_nodes(url);
             } else {
                 // open support file type.
+                if (type === 'text file') {
+                    // open text file.
+                    $.get("/pub/download/"+uuid+"?path="+url,
+                        function(data,status){
+                            var content = $('<div>' + data + '</div>');
+                            $(".modal[name='open-text']").children('.modal-dialog').children('.modal-content').children('.modal-body').append(content);
+                            $(".modal[name='open-text']").modal('show');     
+                    });
+                } else if (type === 'audio file') {
+
+                } else if (type === 'video file') {
+
+                } else if (type === 'photo') {
+                    
+                }
             }
         });
 

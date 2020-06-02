@@ -170,6 +170,7 @@ a, a:link, a:hover, a:visited, a:active {
 .main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row {
 	display: table-row;
 	height: 30px;
+	border: 1px solid #fff;
 }
 
 .main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row.table-nodes-head {
