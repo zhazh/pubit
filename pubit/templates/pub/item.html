@@ -10,7 +10,9 @@
 
 {% block main %}
 <div class="sidebar">
-    <div name="pubitem-dir-tree"></div>
+    <div name="pub-sidemenu">
+        <!-- dynamic load this pub directory tree.-->
+    </div>
 </div>
 
 <div class="main-content">
@@ -36,7 +38,7 @@
     </div>
     
     <div class="pub-main" uuid="{{pub.uuid}}">
-        <div id="pub-path-nav" class="pub-path">
+        <div name="pub-path" class="pub-path">
             <!-- dynamic create path nav. -->
         </div>
         <div class="collapse-toolbar">
@@ -46,10 +48,11 @@
             <button class="btn btn-xs btn-default" role="rename">Rename</button>
             {% endif %}
         </div>
-        <div id="pub-nodes" class="pub-nodes">
+        <div name="pub-nodes" class="pub-nodes">
             <!-- dynamic load pub nodes to here. -->
         </div>
 
+        <!-- show text modal. -->
         <div name="open-text" class="modal fade" tabindex="-1" role="dialog">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
@@ -64,6 +67,7 @@
             </div><!-- /.modal-dialog -->
         </div><!-- /.modal -->
 
+        <!-- play audio modal. -->
         <div name="audio-player" class="modal fade" tabindex="-1" role="dialog">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
@@ -74,6 +78,7 @@
             </div><!-- /.modal-dialog -->
         </div><!-- /.modal -->
 
+        <!-- play video modal. -->
         <div name="video-player" class="modal fade" tabindex="-1" role="dialog">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
@@ -84,6 +89,7 @@
             </div><!-- /.modal-dialog -->
         </div><!-- /.modal -->
 
+        <!-- show image modal. -->
         <div name="image" class="modal fade" tabindex="-1" role="dialog">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
@@ -94,128 +100,52 @@
             </div><!-- /.modal-dialog -->
         </div><!-- /.modal -->
 
+        {% if pub.allow_upload %}
+        <div name="create-folder" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h5 class="modal-title">Create an folder.</h5>
+                    </div>
+                    <div class="modal-body">
+                        <form name="create-folder">
+                            <input name="parent_path" type="text" class="form-control" value="New folder">
+                            <div class="form-group">
+                                <label>Folder name</label>
+                                <input name="name" type="text" class="form-control" placeholder="Folder name" value="New folder">
+                            </div>
+                            <button type="submit" class="btn btn-default">Submit</button>
+                        </form>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+        {% endif %}
     </div>
 </div>
 {% endblock %}
 
 {% block script %}
 <script>
+    var uuid = "{{pub.uuid}}";
+    node_table = new NodeTable(uuid);
+
     $(document).ready(function(){
-        // pubitem directory select jstree initialize.
-        $("div[name='pubitem-dir-tree']").jstree({
+        // show pub root nodes at start.
+        node_table.load('/');
+
+        // pub side-menu tree init.
+        $("div[name='pub-sidemenu']").jstree({
             'core' : {
                 'data' : {'asyn':true, 'url':"{{url_for('api.nodes', uuid=pub.uuid)}}"}
             }
         });
-        // pubitem directory select jstree changed.
-        $("div[name='pubitem-dir-tree']").on("changed.jstree", function (e, data) {
+        
+        // pub side-menu tree selected.
+        $("div[name='pub-sidemenu']").on("changed.jstree", function (e, data) {
             url = data.selected[0];
-            load_nodes(url);
-        });
-
-        update_path_nav = function(url) {
-            url_arr = url.split('/');
-            if (url_arr.length == 2 && url_arr[1] == '') {
-                delete url_arr[0];
-            }
-            var breadcrumb = $("<ol class='breadcrumb'></ol>");
-            for (i=0; i<url_arr.length; i++) {
-                var li = $('<li></li>');
-                if(i==0) {
-                    var href = $("<a href=\"javascript:void(0);\" onclick=\"load_nodes('/');\">Home</a>");
-                } else {
-                    var path = '';
-                    for (j=1; j<=i; j++) {
-                        path = path + '/' + url_arr[j];
-                    }
-                    var href = $("<a href=\"javascript:void(0);\" onclick=\"load_nodes('"+ path + "');\">" + url_arr[i] + "</a>");
-                }
-                li.append(href);
-                breadcrumb.append(li);
-            }
-            $('#pub-path-nav').empty();
-            $('#pub-path-nav').append(breadcrumb);
-        };
-
-        // requried function: load_nodes(url).
-        // nodes: node array.
-        // style: 0: show node list(default), 1: show search result.
-        show_nodes = function(nodes, style) {
-            style = style || 0;
-            var table = $("<div class='table-nodes'></div>");
-            
-            var tab_head = $("<div class='table-nodes-row table-nodes-head'></div>");
-
-            var dir_head = $("<div class='table-nodes-col'>Directory</div>");
-            var name_head = $("<div class='table-nodes-col'>Name</div>");
-            var type_head = $("<div class='table-nodes-col'>Type</div>");
-            var create_head = $("<div class='table-nodes-col'>Create time</div>");
-            var size_head = $("<div class='table-nodes-col'>Size</div>");
-
-            if (style == 1) {
-                tab_head.append(dir_head);
-            }
-            tab_head.append(name_head);
-            tab_head.append(type_head);
-            tab_head.append(create_head);
-            tab_head.append(size_head);
-            table.append(tab_head);
-            for (i=0; i<nodes.length; i++) {
-                var uuid = "{{pub.uuid}}";
-                var path = nodes[i].path;
-                var node_type = nodes[i].type[1].toLowerCase();
-                var node_name = nodes[i].name;
-
-                var item = $("<div class='table-nodes-row' type='" + node_type + "' uuid='" + uuid + "' path='" + path + "' name='" + node_name + "'></div>");
-                var directory = $("<div class='table-nodes-col'>" + "<a href='javascript:void(0);' path='" + nodes[i].parent_path + "' name='parent-path'>" + nodes[i].parent_path + "</a>" + "</div>");
-                var name = $("<div class='table-nodes-col'>" + nodes[i].name + "</div>");
-                var type=$("<div class='table-nodes-col'>" + nodes[i].type[1] + "</div>");
-                var create = $("<div class='table-nodes-col'>" + nodes[i].create + "</div>");
-                var size = $("<div class='table-nodes-col'>" + nodes[i].size + "</div>");
-                
-                if (style == 1) {
-                    item.append(directory);
-                }
-                item.append(name);
-                item.append(type);
-                item.append(create);
-                item.append(size);
-                table.append(item);
-            }
-            $("#pub-nodes").empty();
-            $("#pub-nodes").append(table);
-        };
-
-        var url_stack = new Array();
-        load_nodes = function(url) {
-            $('#pubs-dir-path').empty();
-            $('#pubs-dir-path').append(url);
-            update_path_nav(url);
-            $.get(
-                "{{url_for('api.nodes', uuid=pub.uuid)}}",
-                {path: url},
-                function(nodes){
-                    show_nodes(nodes);
-                }, 
-                "json"
-            );
-            url_stack.push(url);
-            if (url_stack.length<2) {
-                $("a[name='nav-back']").addClass('disabled');
-            } else {
-                $("a[name='nav-back']").removeClass('disabled');
-            }
-        };
-
-        // get root dirctory file and dir list.
-        load_nodes("/");
-
-        $("a[name='nav-back']").on('click', function(){
-            if (url_stack.length >= 2) {
-                url_stack.pop();    // current page.
-                var url = url_stack.pop();
-                load_nodes(url);
-            }
+            node_table.load(url);
         });
 
         // search files in this pub.
@@ -224,7 +154,7 @@
                 "{{url_for('api.search', uuid=pub.uuid)}}",
                 $(this).serialize(),
                 function(nodes){
-                    show_nodes(nodes, 1);
+                    node_table.show(nodes, 1);
                     $("input[name='keywords']").val('');
                 }, 
                 "json"
@@ -232,13 +162,19 @@
             return false;
         });
 
-        $("div.pub-nodes").on("click", "a[name='parent-path']", function(e){
+        // listen path-link click then load and show the path nodes.
+        $("div.pub-nodes").on("click", "a[name='path-link']", function(e){
             var path = $(this).attr('path');
-            load_nodes(path);
+            node_table.load(path);
             e.stopPropagation();
         });
 
+        // To navgation back.
+        $("a[name='nav-back']").on('click', function(){
+            node_table.nav_back();
+        });
 
+        // table-nodes-row selected.
         $("div.pub-main").on("click", function(e){
             var ev = e || window.event;
             var target = ev.target || ev.srcElement;
@@ -273,7 +209,7 @@
             var url = $(this).attr('path');
             console.log(name);
             if (type === 'directory') {
-                load_nodes(url);
+                node_table.load(url);
             } else {
                 // open support file type.
                 if (type === 'text file') {
@@ -304,14 +240,17 @@
             }
         });
 
+        // when audio-player dismiss stop audio playing.
         $(".modal[name='audio-player']").on("hide.bs.modal", function(e){
             $(".modal[name='audio-player']").children('.modal-dialog').children('.modal-content').children('.modal-body').children('audio')[0].pause();
         });
 
+        // when video-player dismiss stop video playing.
         $(".modal[name='video-player']").on("hide.bs.modal", function(e){
             $(".modal[name='video-player']").children('.modal-dialog').children('.modal-content').children('.modal-body').children('video')[0].pause();
         });
 
+        // download file or directory.
         $("button[role='download']").on("click", function(e){
             var selected_row = $("div.table-nodes").children(".active");
             if (selected_row.length == 1) {
@@ -332,4 +271,47 @@
         });
     });
 </script>
+
+{% if pub.allow_upload %}
+<script>
+    $(document).ready(function(){
+
+        $("form[name='create-folder']").validate({
+            rules: {
+                name: "required",
+            },
+            messages: {
+                name: "Empty folder name.",
+            }
+        });
+
+        // Create folder.
+        $("a[name='create-folder']").on('click', function(){
+            $(".modal[name='create-folder']").modal("show");
+        });
+
+        $("form[name='create-folder']").on('submit', function(e){
+            if (!$(this).valid()) {
+                e.preventDefault();
+                return;
+            }
+            $.post("/api/pub/uuid/node", 
+                    $(this).serialize(), 
+                    function(data) {
+                        if (data.code == 0) {
+                            alert("Create folder success.");
+                            node_table.reload();
+                        } else {
+                            alert("Failed to create folder:" + data.msg);
+                        }
+                    }, "json"
+            );
+            $(".modal[name='create-folder']").modal("hide");
+            e.preventDefault();
+            $(this)[0].reset();
+        });
+    });
+</script>
+{% endif %}
+
 {% endblock %}

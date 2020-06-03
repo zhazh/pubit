@@ -1,3 +1,131 @@
+// NodeTable.
+// nodetable = new NodeTable(uuid);
+// nodetable.load();
+var NodeTable = function(uuid) {
+    this.uuid = uuid;
+    this.url_stack = new Array();
+};
+
+NodeTable.prototype.selector_pub_path = "div[name='pub_path']";
+NodeTable.prototype.selector_pub_nodes = "div[name='pub_nodes']";
+NodeTable.prototype.selector_button_back = "a[name='nav-back']";
+
+NodeTable.prototype.update_pub_path = function(url) {
+    
+    var url_arr = url.split('/');
+    if (url_arr.length == 2 && url_arr[1] == '') {
+        delete url_arr[0];
+    }
+    var breadcrumb = $("<ol class='breadcrumb'></ol>");
+    for (i=0; i<url_arr.length; i++) {
+        var li = $('<li></li>');
+        if(i==0) {
+            // root path named 'Home'.
+            var href = $("<a name='path-link' path='/' href='javascript:void(0);'>Home</a>");
+        } else {
+            var path = '';
+            for (j=1; j<=i; j++) {
+                path = path + '/' + url_arr[j];
+            }
+            var href = $("<a name='path-link' path='" + path + "' href='javascript:void(0);'>" + url_arr[i] + "</a>");
+        }
+        li.append(href);
+        breadcrumb.append(li);
+    }
+    $(this.selector_pub_path).empty();
+    $(this.selector_pub_path).append(breadcrumb);
+};
+
+NodeTable.prototype.show = function(nodes, style) {
+    style = style || 0;
+    var uuid = this.uuid;
+
+    var table = $("<div class='table-nodes' uuid='" + uuid + "'></div>");
+    
+    var tab_head = $("<div class='table-nodes-row table-nodes-head'></div>");
+
+    var dir_head = $("<div class='table-nodes-col'>Directory</div>");
+    var name_head = $("<div class='table-nodes-col'>Name</div>");
+    var type_head = $("<div class='table-nodes-col'>Type</div>");
+    var create_head = $("<div class='table-nodes-col'>Create time</div>");
+    var size_head = $("<div class='table-nodes-col'>Size</div>");
+
+    if (style == 1) {
+        tab_head.append(dir_head);
+    }
+
+    tab_head.append(name_head);
+    tab_head.append(type_head);
+    tab_head.append(create_head);
+    tab_head.append(size_head);
+    table.append(tab_head);
+
+    for (i=0; i<nodes.length; i++) {
+        var path = nodes[i].path;
+        var node_type = nodes[i].type[1].toLowerCase();
+        var node_name = nodes[i].name;
+
+        var item = $("<div class='table-nodes-row' type='" + node_type + "' uuid='" + uuid + "' path='" + path + "' name='" + node_name + "'></div>");
+        var directory = $("<div class='table-nodes-col'>" + "<a name='path-link' href='javascript:void(0);' path='" + nodes[i].parent_path + "' name='parent-path'>" + nodes[i].parent_path + "</a>" + "</div>");
+        var name = $("<div class='table-nodes-col'>" + nodes[i].name + "</div>");
+        var type=$("<div class='table-nodes-col'>" + nodes[i].type[1] + "</div>");
+        var create = $("<div class='table-nodes-col'>" + nodes[i].create + "</div>");
+        var size = $("<div class='table-nodes-col'>" + nodes[i].size + "</div>");
+        
+        if (style == 1) {
+            item.append(directory);
+        }
+
+        item.append(name);
+        item.append(type);
+        item.append(create);
+        item.append(size);
+        table.append(item);
+    }
+    $(this.selector_pub_nodes).empty();
+    $(this.selector_pub_nodes).append(table);
+};
+
+NodeTable.prototype.load = function(url) {
+    this.update_pub_path(url);
+    $.get(
+        `/api/pub/${this.uuid}/nodes`,
+        {path: url},
+        function(nodes){
+            console.log(nodes);
+            this.show(nodes, 0);
+        }, 
+        "json"
+    );
+    this.url_stack.push(url);
+    if (this.url_stack.length<2) {
+        $(this.selector_button_back).addClass('disabled');
+    } else {
+        $(this.selector_button_back).removeClass('disabled');
+    }
+};
+
+NodeTable.prototype.reload = function() {
+    var url = this.url_stack[url_stack.length - 1];
+    this.update_pub_path(url);
+    $.get(
+        `/api/pub/${this.uuid}/nodes`,
+        {path: url},
+        function(nodes){
+            this.show(nodes);
+        }, 
+        "json"
+    );
+};
+
+NodeTable.prototype.nav_back = function() {
+    if (this.url_stack.length >= 2) {
+        this.url_stack.pop();    // current page.
+        var url = this.url_stack.pop();
+        this.load(url);
+    }
+};
+
 $(document).ready(function(){
     // Set modal box position when appeared.
 	$("div.modal").on('show.bs.modal', function(e){

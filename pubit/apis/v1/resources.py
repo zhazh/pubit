@@ -235,14 +235,16 @@ class NodeAPI(MethodView):
                 if session_pub is None or session_pub != uuid:
                     return RespUnauthenticated().jsonify
             
-            path = request.args.get('path', None)
-            if path is None:
-                return RespArgumentWrong('path', 'missed')
-            else:
-                #: Return pub item sub directory(path) file and directory.
-                node = Node(base_dir=pub.location, path=path)
-                Service().send('new', target=node.local_path)
-                return RespSuccess().jsonify
+            parent_path = request.args.get('parent_path', None)
+            if parent_path is None:
+                return RespArgumentWrong('parent_path', 'missed')
+            name = request.args.get('name', None)
+            if name is None:
+                return RespArgumentWrong('name', 'missed')
+            path = parent_path + '/' + name
+            node = Node(base_dir=pub.location, path=path)
+            Service().send('new', target=node.local_path)
+            return RespSuccess().jsonify
         except Exception as e:
             current_app.logger.error(e)
             return RespServerWrong().jsonify
