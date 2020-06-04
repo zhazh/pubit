@@ -1,13 +1,25 @@
-// NodeTable.
-// nodetable = new NodeTable(uuid);
-// nodetable.load();
+/*
+ * NodeTable: load nodes data and show it.
+ * Usage:
+ * =======================================
+ * 1. Create global NodeTable object.
+ * nodetab = new NodeTable(uuid);
+ * 2. In function call load().
+ * nodetab.load('/);
+ * 3. Add 'path-link' href listener.
+ * $("a[name='path-link']").on('click', function(){
+ *      var path = $(this).attr('path);
+ *      nodetab.load(path);
+ * });
+ */
+
 var NodeTable = function(uuid) {
     this.uuid = uuid;
     this.url_stack = new Array();
 };
 
-NodeTable.prototype.selector_pub_path = "div[name='pub_path']";
-NodeTable.prototype.selector_pub_nodes = "div[name='pub_nodes']";
+NodeTable.prototype.selector_pub_path = "div[name='pub-path']";
+NodeTable.prototype.selector_pub_nodes = "div[name='pub-nodes']";
 NodeTable.prototype.selector_button_back = "a[name='nav-back']";
 
 NodeTable.prototype.update_pub_path = function(url) {
@@ -37,6 +49,10 @@ NodeTable.prototype.update_pub_path = function(url) {
 };
 
 NodeTable.prototype.show = function(nodes, style) {
+    /*
+     * style = 0 (default.): show column: name, type, create time, size.
+     * style = 1 (for show search result.): show directory, name, type, create_time, size.
+     */
     style = style || 0;
     var uuid = this.uuid;
 
@@ -88,16 +104,21 @@ NodeTable.prototype.show = function(nodes, style) {
 
 NodeTable.prototype.load = function(url) {
     this.update_pub_path(url);
+    var ndtab_obj = this;
+    var show_nodes = function(nodes, obj) {
+        obj.show(nodes);
+    };
     $.get(
         `/api/pub/${this.uuid}/nodes`,
         {path: url},
         function(nodes){
-            console.log(nodes);
-            this.show(nodes, 0);
+            show_nodes(nodes, ndtab_obj);
         }, 
         "json"
     );
+    
     this.url_stack.push(url);
+
     if (this.url_stack.length<2) {
         $(this.selector_button_back).addClass('disabled');
     } else {
@@ -105,14 +126,22 @@ NodeTable.prototype.load = function(url) {
     }
 };
 
+NodeTable.prototype.current_url = function() {
+    return this.url_stack[this.url_stack.length - 1];
+}
+
 NodeTable.prototype.reload = function() {
-    var url = this.url_stack[url_stack.length - 1];
+    var url = this.current_url();
     this.update_pub_path(url);
+    var ndtab_obj = this;
+    var show_nodes = function(nodes, obj) {
+        obj.show(nodes);
+    };
     $.get(
         `/api/pub/${this.uuid}/nodes`,
         {path: url},
         function(nodes){
-            this.show(nodes);
+            show_nodes(nodes, ndtab_obj);
         }, 
         "json"
     );

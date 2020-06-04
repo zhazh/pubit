@@ -235,15 +235,15 @@ class NodeAPI(MethodView):
                 if session_pub is None or session_pub != uuid:
                     return RespUnauthenticated().jsonify
             
-            parent_path = request.args.get('parent_path', None)
+            parent_path = request.form.get('parent_path', None)
             if parent_path is None:
-                return RespArgumentWrong('parent_path', 'missed')
-            name = request.args.get('name', None)
+                return RespArgumentWrong('parent_path', 'missed').jsonify
+            name = request.form.get('name', None)
             if name is None:
-                return RespArgumentWrong('name', 'missed')
+                return RespArgumentWrong('name', 'missed').jsonify
             path = parent_path + '/' + name
-            node = Node(base_dir=pub.location, path=path)
-            Service().send('new', target=node.local_path)
+            folder_path = Node.pathToLocal(pub.location, path)
+            Service().send('new', target=folder_path)
             return RespSuccess().jsonify
         except Exception as e:
             current_app.logger.error(e)
@@ -262,13 +262,13 @@ class NodeAPI(MethodView):
                 if session_pub is None or session_pub != uuid:
                     return RespUnauthenticated().jsonify
             
-            path = request.args.get('path', None)
+            path = request.form.get('path', None)
             if path is None:
-                return RespArgumentWrong('path', 'missed')
+                return RespArgumentWrong('path', 'missed').jsonify
 
-            name = request.args.get('name', None)
+            name = request.form.get('name', None)
             if name is None:
-                return RespArgumentWrong('name', 'missed')
+                return RespArgumentWrong('name', 'missed').jsonify
 
             node = Node(base_dir=pub.location, path=path)
             _dir, _name = os.path.split(node.local_path)
@@ -316,7 +316,7 @@ class SearchAPI(MethodView):
                 if session_pub is None or session_pub != uuid:
                     return RespUnauthenticated().jsonify
 
-            keywords = request.args.get('keywords', None)
+            keywords = request.form.get('keywords', None)
             if keywords is None:
                 return RespArgumentWrong('keywords', 'missed.')
             node = Node(base_dir=pub.location, path='/')

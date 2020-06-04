@@ -110,7 +110,7 @@
                     </div>
                     <div class="modal-body">
                         <form name="create-folder">
-                            <input name="parent_path" type="text" class="form-control" value="New folder">
+                            <input name="parent_path" type="hidden" class="form-control" value="">
                             <div class="form-group">
                                 <label>Folder name</label>
                                 <input name="name" type="text" class="form-control" placeholder="Folder name" value="New folder">
@@ -287,6 +287,8 @@
 
         // Create folder.
         $("a[name='create-folder']").on('click', function(){
+            var current_url = node_table.current_url();
+            $(".modal[name='create-folder']").find("input[name='parent_path']").val(current_url);
             $(".modal[name='create-folder']").modal("show");
         });
 
@@ -295,7 +297,7 @@
                 e.preventDefault();
                 return;
             }
-            $.post("/api/pub/uuid/node", 
+            $.post("/api/pub/" + node_table.uuid + "/node", 
                     $(this).serialize(), 
                     function(data) {
                         if (data.code == 0) {

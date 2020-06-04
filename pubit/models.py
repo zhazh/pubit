@@ -196,3 +196,9 @@ class Node(object):
                         node = Node(base_dir=self.base_dir, path=path)
                         node_list.append(node)
         return node_list
+    
+    @classmethod
+    def pathToLocal(cls, base_dir, path):
+        """ transform path to local path.
+        """
+        return base_dir + path[1:].replace('/', os.path.sep)
