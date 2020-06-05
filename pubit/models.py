@@ -65,7 +65,7 @@ class _File(object):
 class Node(object):
     def __init__(self, base_dir=None, path='/'):
         """ Create node attributes.
-            :attr base_dir:     absolute local path of base directory.
+            :attr base_dir:     absolute local path of base directory(server-side).
             :attr path:         path relactive to base directory used web path style, such as '/', '/home', '/home/data'.
             :attr parent_path:  parent directory relactive path.
             :attr name:         node name, root path name is 'Home'.
@@ -76,23 +76,24 @@ class Node(object):
             :attr modify:       node last modify time.
             :attr type:         node type, such as 'directory', 'audio file'
         """
+        cls = self.__class__
         self.base_dir = os.path.normpath(base_dir if base_dir else current_app.config['ADMIN_HOME'])
         if not os.path.isdir(self.base_dir):
             raise TypeError("base_dir:'%s' is not an valid directory."%self.base_dir)
         
-        self.path = self._regulate_path(path)
+        self.path = cls.correct_the_path(path)
         if self.path == '/':
             self.name = 'Home'          # root path name is 'Home'
             self.parent_path = None     # root path parent path is None.
         else:
             self.parent_path , self.name = os.path.split(self.path)
-        valid_path = list(filter(lambda p: p!='', self.path.split('/')))
-        self.local_path = os.path.join(self.base_dir, *valid_path)
+        self.local_path = cls.path_to_local(self.base_dir, self.path)
         if not os.path.exists(self.local_path):
             raise TypeError("path:'%s' doesn't exist."%self.local_path)
         self._set_extra()
 
-    def _regulate_path(self, path):
+    @classmethod
+    def correct_the_path(cls, path):
         """ Regularize input path parameters.
         """
         path_list = path.split('/')
@@ -111,6 +112,16 @@ class Node(object):
             for p in stack:
                 path = path + '/' + p
         return path
+
+    @classmethod
+    def path_to_local(cls, base_dir, path):
+        """ transform path to local path.
+            :arg base_dir: absolute local path of base directory(server-side).
+            :arg path: web path style relactive to base_dir.
+        """
+        path = cls.correct_the_path(path)
+        valid_path = list(filter(lambda p: p!='', path.split('/')))
+        return os.path.join(base_dir, *valid_path)
 
     def _set_extra(self):
         """ Set extra attributes after set attr `local_path`.
@@ -196,9 +207,3 @@ class Node(object):
                         node = Node(base_dir=self.base_dir, path=path)
                         node_list.append(node)
         return node_list
-    
-    @classmethod
-    def pathToLocal(cls, base_dir, path):
-        """ transform path to local path.
-        """
-        return base_dir + path[1:].replace('/', os.path.sep)

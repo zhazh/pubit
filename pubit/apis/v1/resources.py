@@ -238,13 +238,23 @@ class NodeAPI(MethodView):
             parent_path = request.form.get('parent_path', None)
             if parent_path is None:
                 return RespArgumentWrong('parent_path', 'missed').jsonify
+            elif parent_path == '':
+                parent_path = '/'
+
             name = request.form.get('name', None)
             if name is None:
                 return RespArgumentWrong('name', 'missed').jsonify
-            path = parent_path + '/' + name
-            folder_path = Node.pathToLocal(pub.location, path)
-            Service().send('new', target=folder_path)
+            
+            path = os.path.join(parent_path, name)
+            local_path = Node.path_to_local(pub.location, path)
+            Service().send('new', target=local_path)
             return RespSuccess().jsonify
+        except FileExistsError as e:
+            current_app.logger.error(e)
+            return RespServerWrong('The folder already exists').jsonify
+        except PermissionError as e:
+            current_app.logger.error(e)
+            return RespServerWrong('Permission denied').jsonify
         except Exception as e:
             current_app.logger.error(e)
             return RespServerWrong().jsonify
@@ -316,9 +326,9 @@ class SearchAPI(MethodView):
                 if session_pub is None or session_pub != uuid:
                     return RespUnauthenticated().jsonify
 
-            keywords = request.form.get('keywords', None)
+            keywords = request.args.get('keywords', None)
             if keywords is None:
-                return RespArgumentWrong('keywords', 'missed.')
+                return RespArgumentWrong('keywords', 'missed.').jsonify
             node = Node(base_dir=pub.location, path='/')
             node_list = list()
             for nd in node.search(keywords):

@@ -57,9 +57,10 @@ NodeTable.prototype.show = function(nodes, style) {
     var uuid = this.uuid;
 
     var table = $("<div class='table-nodes' uuid='" + uuid + "'></div>");
-    
-    var tab_head = $("<div class='table-nodes-row table-nodes-head'></div>");
 
+    var tab_head = $("<div class='table-nodes-head'></div>");
+    var tab_head_row = $("<div class='table-nodes-row'></div>");
+    
     var dir_head = $("<div class='table-nodes-col'>Directory</div>");
     var name_head = $("<div class='table-nodes-col'>Name</div>");
     var type_head = $("<div class='table-nodes-col'>Type</div>");
@@ -67,21 +68,29 @@ NodeTable.prototype.show = function(nodes, style) {
     var size_head = $("<div class='table-nodes-col'>Size</div>");
 
     if (style == 1) {
-        tab_head.append(dir_head);
+        tab_head_row.append(dir_head);
     }
 
-    tab_head.append(name_head);
-    tab_head.append(type_head);
-    tab_head.append(create_head);
-    tab_head.append(size_head);
+    tab_head_row.append(name_head);
+    tab_head_row.append(type_head);
+    tab_head_row.append(create_head);
+    tab_head_row.append(size_head);
+
+    tab_head.append(tab_head_row);
     table.append(tab_head);
 
+    var tab_body = $("<div class='table-nodes-body'></div>");
     for (i=0; i<nodes.length; i++) {
         var path = nodes[i].path;
         var node_type = nodes[i].type[1].toLowerCase();
         var node_name = nodes[i].name;
 
-        var item = $("<div class='table-nodes-row' type='" + node_type + "' uuid='" + uuid + "' path='" + path + "' name='" + node_name + "'></div>");
+        var item_class = 'table-nodes-row';
+        if (i == 0) {
+            item_class = 'table-nodes-row active';
+        }
+
+        var item = $("<div class='" + item_class + "' type='" + node_type + "' uuid='" + uuid + "' path='" + path + "' name='" + node_name + "'></div>");
         var directory = $("<div class='table-nodes-col'>" + "<a name='path-link' href='javascript:void(0);' path='" + nodes[i].parent_path + "' name='parent-path'>" + nodes[i].parent_path + "</a>" + "</div>");
         var name = $("<div class='table-nodes-col'>" + nodes[i].name + "</div>");
         var type=$("<div class='table-nodes-col'>" + nodes[i].type[1] + "</div>");
@@ -96,8 +105,9 @@ NodeTable.prototype.show = function(nodes, style) {
         item.append(type);
         item.append(create);
         item.append(size);
-        table.append(item);
+        tab_body.append(item);
     }
+    table.append(tab_body);
     $(this.selector_pub_nodes).empty();
     $(this.selector_pub_nodes).append(table);
 };

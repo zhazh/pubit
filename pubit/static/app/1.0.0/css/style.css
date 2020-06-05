@@ -66,7 +66,7 @@ a, a:link, a:hover, a:visited, a:active {
 
 .main > div:last-child {
 	flex-grow:1;
-	overflow-y:scroll;
+	overflow-y: hidden;
 }
 
 .sidebar {
@@ -88,6 +88,7 @@ a, a:link, a:hover, a:visited, a:active {
 
 .main-content > div:last-child {
 	flex-grow:1;
+	overflow-y: hidden;
 }
 
 .main-content > .admin-main {
@@ -135,12 +136,14 @@ a, a:link, a:hover, a:visited, a:active {
 }
 
 .main-content > .pub-main {
-	background-color: #fff;
+	display: flex;
+	flex-direction: column;
 }
 
 .main-content > .pub-main > .pub-path {
 	font-size: 10px;
-	border-bottom:1px solid #bababa;
+	border-bottom: 1px solid #bababa;
+	height: 30px;
 }
 
 .breadcrumb {
@@ -149,7 +152,7 @@ a, a:link, a:hover, a:visited, a:active {
 	background-color:#eee;
 }
 
-.main-content > .pub-main .collapse-toolbar {
+.main-content > .pub-main > .collapse-toolbar {
 	display: none;
 	padding: 5px 15px;
 	border-bottom:1px solid #bababa;
@@ -159,6 +162,8 @@ a, a:link, a:hover, a:visited, a:active {
 
 .main-content > .pub-main > .pub-nodes {
 	font-size: 14px;
+	flex-grow: 1;
+	overflow-y: scroll;
 }
 
 .main-content > .pub-main > .pub-nodes > .table-nodes {
@@ -167,36 +172,51 @@ a, a:link, a:hover, a:visited, a:active {
 	border-collapse: collapse;
 }
 
-.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row {
+.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-head {
+	height: 30px;
+	line-height: 30px;
+	background-color: #eee;
+	display: table-header-group;
+}
+
+.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-body {
+	background-color: #fff;
+	display: table-row-group;
+}
+
+.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-head > .table-nodes-row {
+	display: table-row;
+	border-bottom: 1px solid #bababa;
+}
+
+.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-head > .table-nodes-row > .table-nodes-col {
+	display: table-cell;
+	vertical-align: middle; 
+	padding-left: 15px;
+	border-right: 1px solid #ccc;
+}
+
+.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-body > .table-nodes-row {
 	display: table-row;
 	height: 30px;
 	border: 1px solid #fff;
 	cursor: default;
 }
 
-.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row.table-nodes-head {
-	border: 1px solid #ccc;
-	background-color: #eee;
-}
-
-.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row:hover {
+.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-body > .table-nodes-row:hover {
 	border: 1px solid #bbdefb;
 	background-color: #e3f2fd;
 }
 
-.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row.active {
+.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-body > .table-nodes-row.active {
 	border: 1px solid #bbdefb;
 	background-color: #90caf9;
 }
 
-.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row > .table-nodes-col {
+.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-body > .table-nodes-row > .table-nodes-col {
 	display: table-cell;
 	vertical-align: middle; 
 	padding-left: 15px;
-}
-
-.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-row.table-nodes-head > .table-nodes-col {
-	border: 1px solid #ccc;
 }
 
 .modal[name=open-text] > .modal-dialog {

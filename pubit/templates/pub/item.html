@@ -36,22 +36,8 @@
             <input name="keywords" type="text" placeholder="Search file in pub..." class="form-control">
         </form>
     </div>
-    
-    <div class="pub-main" uuid="{{pub.uuid}}">
-        <div name="pub-path" class="pub-path">
-            <!-- dynamic create path nav. -->
-        </div>
-        <div class="collapse-toolbar">
-            <button class="btn btn-xs btn-default" role="download">Download</button>
-            {% if pub.allow_upload %}
-            <button class="btn btn-xs btn-default" role="delete">Delete</button>
-            <button class="btn btn-xs btn-default" role="rename">Rename</button>
-            {% endif %}
-        </div>
-        <div name="pub-nodes" class="pub-nodes">
-            <!-- dynamic load pub nodes to here. -->
-        </div>
 
+    <div class="modals">
         <!-- show text modal. -->
         <div name="open-text" class="modal fade" tabindex="-1" role="dialog">
             <div class="modal-dialog" role="document">
@@ -123,7 +109,24 @@
         </div><!-- /.modal -->
         {% endif %}
     </div>
+
+    <div class="pub-main" uuid="{{pub.uuid}}">
+        <div name="pub-path" class="pub-path">
+            <!-- dynamic create path nav. -->
+        </div>
+        <div class="collapse-toolbar">
+            <button class="btn btn-xs btn-default" role="download">Download</button>
+            {% if pub.allow_upload %}
+            <button class="btn btn-xs btn-default" role="delete">Delete</button>
+            <button class="btn btn-xs btn-default" role="rename">Rename</button>
+            {% endif %}
+        </div>
+        <div name="pub-nodes" class="pub-nodes">
+            <!-- dynamic load pub nodes to here. -->
+        </div>
+    </div>
 </div>
+
 {% endblock %}
 
 {% block script %}
@@ -163,7 +166,7 @@
         });
 
         // listen path-link click then load and show the path nodes.
-        $("div.pub-nodes").on("click", "a[name='path-link']", function(e){
+        $("div.pub-main").on("click", "a[name='path-link']", function(e){
             var path = $(this).attr('path');
             node_table.load(path);
             e.stopPropagation();
@@ -175,34 +178,23 @@
         });
 
         // table-nodes-row selected.
-        $("div.pub-main").on("click", function(e){
+        $("div.pub-nodes").on("click", ".table-nodes > .table-nodes-body", function(e){
             var ev = e || window.event;
             var target = ev.target || ev.srcElement;
+            console.log(target);
             if ($(target).is('.table-nodes-col')) {
                 // table-row clicked.
                 var row = $(target).parent();
-                if ($(row).hasClass('table-nodes-head')) {
-                    // skip table-nodes-head.
-                    return;
-                }
                 $(row).addClass('active');
                 $(row).siblings().removeClass('active');
                 $("div.collapse-toolbar").slideDown();
             } else {
-                if ($(target).is(".collapse-toolbar")) {
-                    // skip .collapse-toolbar click.
-                    return;
-                }
                 $("div.collapse-toolbar").slideUp();
             }
         });
 
         // double click to open node(play audio/video).
-        $("div.pub-nodes").on("dblclick", ".table-nodes-row", function(e){
-            if ($(this).hasClass('table-nodes-head')) {
-                // skip: .table-nodes-head.
-                return;
-            }
+        $("div.pub-nodes").on("dblclick", ".table-nodes > .table-nodes-body > .table-nodes-row", function(e){
             var name = $(this).attr('name');
             var type = $(this).attr('type');
             var uuid = $(this).attr("uuid");
@@ -252,7 +244,7 @@
 
         // download file or directory.
         $("button[role='download']").on("click", function(e){
-            var selected_row = $("div.table-nodes").children(".active");
+            var selected_row = $(".table-nodes > .table-nodes-body").children(".active");
             if (selected_row.length == 1) {
                 var type = $(selected_row).attr("type");
                 var uuid = $(selected_row).attr("uuid");
@@ -264,8 +256,10 @@
                     // file download.
                     window.location.href = "/pub/download/"+uuid+"?path="+path;
                 }
+            } else if (selected_row.length == 0) {
+                alert("Unselect row.");
             } else {
-                alert("Unselected item!");
+                alert("Selected too many.");
             }
             e.stopPropagation();
         });

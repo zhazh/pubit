@@ -31,9 +31,12 @@ class RespUnauthenticated(AjaxResp):
         super().__init__(1, 'Unauthenticated.', 403)
 
 class RespServerWrong(AjaxResp):
-    def __init__(self):
+    def __init__(self, extra=None):
         #: Return with http status: 500, Internal error.
-        super().__init__(2, 'Server occoured an exception.', 500)
+        if extra:
+            super().__init__(2, 'Internal error: %s'%extra, 500)
+        else:
+            super().__init__(2, 'Internal error.', 500)
 
 class RespArgumentWrong(AjaxResp):
     def __init__(self, arg_name, extra=None):
