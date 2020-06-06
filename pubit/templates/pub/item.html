@@ -220,7 +220,10 @@
         // pub side-menu tree init.
         $("div[name='pub-sidemenu']").jstree({
             'core' : {
-                'data' : {'asyn':true, 'url':"{{url_for('api.nodes', uuid=pub.uuid)}}"}
+                'data' : {
+                    'asyn':true, 
+                    'url':"{{url_for('api.nodes', uuid=pub.uuid)}}"
+                }
             }
         });
         

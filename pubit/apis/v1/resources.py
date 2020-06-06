@@ -15,7 +15,7 @@ from pubit.decorators import admin_check, admin_authed, admin_login, admin_logou
 from pubit.models import Pubitem, Node
 from pubit.extensions import db
 from pubit.service import Service
-from pubit.apis.decorators import admin_required
+from pubit.apis.decorators import admin_required, node_required
 from pubit.apis.resps import RespSuccess, RespServerWrong, RespArgumentWrong, RespUnauthenticated
 from pubit.apis.v1 import api_v1
 from pubit.apis.v1.schemas import pub_schema, node_schema
@@ -167,6 +167,8 @@ class PubAPI(MethodView):
             return RespServerWrong().jsonify
 
 class NodesAPI(MethodView):
+    decorators = [node_required]
+
     def get(self, uuid):
         """ List pub child nodes or root directory tree.
             if request arg `path` is None, return root directory tree.
@@ -174,14 +176,6 @@ class NodesAPI(MethodView):
         """
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-            if pub is None:
-                return RespArgumentWrong('uuid', 'invalid.').jsonify
-            if not pub.is_public:
-                #protected folder item.
-                session_pub = session.get('pub')
-                if session_pub is None or session_pub != uuid:
-                    return RespUnauthenticated().jsonify
-            
             path = request.args.get('path', None)
             if path is None:
                 #: Return pub folder root directory tree.
@@ -199,19 +193,13 @@ class NodesAPI(MethodView):
             return RespServerWrong().jsonify
 
 class NodeAPI(MethodView):
+    decorators = [node_required]
+
     def get(self, uuid):
         """ Return node description.
         """
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-            if pub is None:
-                return RespArgumentWrong('uuid', 'invalid.').jsonify
-            if not pub.is_public:
-                #protected folder item.
-                session_pub = session.get('pub')
-                if session_pub is None or session_pub != uuid:
-                    return RespUnauthenticated().jsonify
-            
             path = request.args.get('path', None)
             if path is None:
                 return RespArgumentWrong('path', 'missed')
@@ -226,15 +214,7 @@ class NodeAPI(MethodView):
         """ Create new folder node.
         """
         try:
-            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-            if pub is None:
-                return RespArgumentWrong('uuid', 'invalid.').jsonify
-            if not pub.is_public:
-                #protected folder item.
-                session_pub = session.get('pub')
-                if session_pub is None or session_pub != uuid:
-                    return RespUnauthenticated().jsonify
-            
+            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()            
             parent_path = request.form.get('parent_path', None)
             if parent_path is None:
                 return RespArgumentWrong('parent_path', 'missed').jsonify
@@ -264,14 +244,6 @@ class NodeAPI(MethodView):
         """
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-            if pub is None:
-                return RespArgumentWrong('uuid', 'invalid.').jsonify
-            if not pub.is_public:
-                #protected folder item.
-                session_pub = session.get('pub')
-                if session_pub is None or session_pub != uuid:
-                    return RespUnauthenticated().jsonify
-            
             parent_path = request.form.get('parent_path', None)
             if parent_path is None:
                 return RespArgumentWrong('parent_path', 'missed').jsonify
@@ -308,15 +280,7 @@ class NodeAPI(MethodView):
         """ Delete an node(folder or file).
         """
         try:
-            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-            if pub is None:
-                return RespArgumentWrong('uuid', 'invalid.').jsonify
-            if not pub.is_public:
-                #protected folder item.
-                session_pub = session.get('pub')
-                if session_pub is None or session_pub != uuid:
-                    return RespUnauthenticated().jsonify
-            
+            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()            
             path = request.form.get('path', None)
             if path is None:
                 return RespArgumentWrong('path', 'missed').jsonify
@@ -330,17 +294,10 @@ class NodeAPI(MethodView):
             return RespServerWrong().jsonify
 
 class NodeSearchAPI(MethodView):
+    decorators = [node_required]
     def get(self, uuid):
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-            if pub is None:
-                return RespArgumentWrong('uuid', 'invalid.').jsonify
-            if not pub.is_public:
-                #protected folder item.
-                session_pub = session.get('pub')
-                if session_pub is None or session_pub != uuid:
-                    return RespUnauthenticated().jsonify
-
             keywords = request.args.get('keywords', None)
             if keywords is None:
                 return RespArgumentWrong('keywords', 'missed.').jsonify
@@ -354,6 +311,7 @@ class NodeSearchAPI(MethodView):
             return RespServerWrong().jsonify
 
 class NodeLoadAPI(MethodView):
+    decorators = [node_required]
     def get(self, uuid):
         """ Node(File/Directory) download.
         """
@@ -364,14 +322,6 @@ class NodeLoadAPI(MethodView):
         """
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-            if pub is None:
-                return RespArgumentWrong('uuid', 'invalid.').jsonify
-            if not pub.is_public:
-                #protected folder item.
-                session_pub = session.get('pub')
-                if session_pub is None or session_pub != uuid:
-                    return RespUnauthenticated().jsonify
-            
             parent_path = request.form.get('parent_path', None)
             if parent_path is None:
                 return RespArgumentWrong('parent_path', 'missed').jsonify
