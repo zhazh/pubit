@@ -272,24 +272,40 @@ class NodeAPI(MethodView):
                 if session_pub is None or session_pub != uuid:
                     return RespUnauthenticated().jsonify
             
-            path = request.form.get('path', None)
-            if path is None:
-                return RespArgumentWrong('path', 'missed').jsonify
+            parent_path = request.form.get('parent_path', None)
+            if parent_path is None:
+                return RespArgumentWrong('parent_path', 'missed').jsonify
+            elif parent_path == '':
+                parent_path = '/'
 
-            name = request.form.get('name', None)
-            if name is None:
-                return RespArgumentWrong('name', 'missed').jsonify
+            old_name = request.form.get('old_name', None)
+            if old_name is None:
+                return RespArgumentWrong('old_name', 'missed').jsonify
 
-            node = Node(base_dir=pub.location, path=path)
-            _dir, _name = os.path.split(node.local_path)
-            Service().send('move', src=node.local_path, dst=os.path.join(_dir, name))
+            new_name = request.form.get('new_name', None)
+            if new_name is None:
+                return RespArgumentWrong('new_name', 'missed').jsonify
+
+            old_path = os.path.join(parent_path, old_name)
+            old_local_path = Node.path_to_local(pub.location, old_path)
+            new_path = os.path.join(parent_path, new_name)
+            new_local_path = Node.path_to_local(pub.location, new_path)
+            if os.path.exists(new_local_path):
+                raise FileExistsError(new_local_path)
+            Service().send('move', src=old_local_path, dst=new_local_path)
             return RespSuccess().jsonify
+        except FileExistsError as e:
+            current_app.logger.error(e)
+            return RespServerWrong('The node already exists').jsonify
+        except PermissionError as e:
+            current_app.logger.error(e)
+            return RespServerWrong('Permission denied').jsonify
         except Exception as e:
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
     def delete(self, uuid):
-        """ Delete an node(folder/path)
+        """ Delete an node(folder or file).
         """
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
@@ -301,9 +317,9 @@ class NodeAPI(MethodView):
                 if session_pub is None or session_pub != uuid:
                     return RespUnauthenticated().jsonify
             
-            path = request.args.get('path', None)
+            path = request.form.get('path', None)
             if path is None:
-                return RespArgumentWrong('path', 'missed')
+                return RespArgumentWrong('path', 'missed').jsonify
             else:
                 #: Return pub item sub directory(path) file and directory.
                 node = Node(base_dir=pub.location, path=path)
@@ -313,8 +329,7 @@ class NodeAPI(MethodView):
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
-
-class SearchAPI(MethodView):
+class NodeSearchAPI(MethodView):
     def get(self, uuid):
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
@@ -338,9 +353,42 @@ class SearchAPI(MethodView):
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
+class NodeLoadAPI(MethodView):
+    def get(self, uuid):
+        """ Node(File/Directory) download.
+        """
+        pass
+    
+    def post(self, uuid):
+        """ Node(File/Directory) upload.
+        """
+        try:
+            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
+            if pub is None:
+                return RespArgumentWrong('uuid', 'invalid.').jsonify
+            if not pub.is_public:
+                #protected folder item.
+                session_pub = session.get('pub')
+                if session_pub is None or session_pub != uuid:
+                    return RespUnauthenticated().jsonify
+            
+            parent_path = request.form.get('parent_path', None)
+            if parent_path is None:
+                return RespArgumentWrong('parent_path', 'missed').jsonify
+            f = request.files['file']
+            basedir = Node.path_to_local(pub.location, parent_path)
+            local_path = os.path.join(basedir, f.filename)
+            f.save(local_path)
+            return RespSuccess().jsonify
+        except Exception as e:
+            current_app.logger.error(e)
+            return RespServerWrong().jsonify
+    
 api_v1.add_url_rule('/', view_func=IndexAPI.as_view('index'), methods=['GET'])
 api_v1.add_url_rule('/pub', view_func=PubAPI.as_view('pub'), methods=['GET', 'POST'])
 api_v1.add_url_rule('/pub/<uuid>', view_func=PubAPI.as_view('pub_item'), methods=['GET', 'PUT', 'DELETE'])
 api_v1.add_url_rule('/pub/<uuid>/nodes', view_func=NodesAPI.as_view('nodes'), methods=['GET'])
 api_v1.add_url_rule('/pub/<uuid>/node', view_func=NodeAPI.as_view('node'), methods=['GET', 'POST', 'PUT', 'DELETE'])
-api_v1.add_url_rule('/pub/<uuid>/search', view_func=SearchAPI.as_view('search'), methods=['GET'])
+api_v1.add_url_rule('/pub/<uuid>/node/search', view_func=NodeSearchAPI.as_view('search'), methods=['GET'])
+api_v1.add_url_rule('/pub/<uuid>/node/download', view_func=NodeLoadAPI.as_view('download'), methods=['GET'])
+api_v1.add_url_rule('/pub/<uuid>/node/upload', view_func=NodeLoadAPI.as_view('upload'), methods=['POST'])

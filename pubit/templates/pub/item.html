@@ -25,8 +25,8 @@
                     Upload<span class="caret"></span> 
                 </a>
                 <ul class="dropdown-menu">
-                    <li><a href="javascript:;">File</a></li>
-                    <li><a href="javascript:;">Folder</a></li>
+                    <li><a name="upload-file" href="javascript:;">File</a></li>
+                    <li><a name="upload-folder" href="javascript:;">Folder</a></li>
                 </ul>
             </li>
             <li><a name="create-folder" href="javascript:;" class="btn btn-default">New folder</a></li>
@@ -87,6 +87,57 @@
         </div><!-- /.modal -->
 
         {% if pub.allow_upload %}
+        <!-- upload file modal-->
+        <div name="upload-file" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h5 class="modal-title">Upload file.</h5>
+                    </div>
+                    <div class="modal-body">
+                        <form name="upload-file" enctype='multipart/form-data'>
+                            <div class="form-group">
+                                <label>Upload directory</label>
+                                <input name="parent_path" type="text" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>File</label>
+                                <input name="file" type="file" class="form-control"/>
+                            </div>
+                            <button type="submit" class="btn btn-default">Upload</button>
+                        </form>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+
+        <!-- upload folder modal-->
+        <div name="upload-folder" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h5 class="modal-title">Upload folder.</h5>
+                    </div>
+                    <div class="modal-body">
+                        <form name="upload-folder" enctype='multipart/form-data'>
+                            <div class="form-group">
+                                <label>Upload directory</label>
+                                <input name="parent_path" type="text" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Local directory</label>
+                                <input name="dir" type="file" class="form-control" webkitdirectory directory multiple/>
+                            </div>
+                            <button type="submit" class="btn btn-default">Upload</button>
+                        </form>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+
+        <!-- create folder modal-->
         <div name="create-folder" class="modal fade" tabindex="-1" role="dialog">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
@@ -100,6 +151,34 @@
                             <div class="form-group">
                                 <label>Folder name</label>
                                 <input name="name" type="text" class="form-control" placeholder="Folder name" value="New folder">
+                            </div>
+                            <button type="submit" class="btn btn-default">Submit</button>
+                        </form>
+                    </div>
+                </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+
+        <!-- rename an node modal. -->
+        <div name="rename-node" class="modal fade" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h5 class="modal-title">Rename node.</h5>
+                    </div>
+                    <div class="modal-body">
+                        <form name="rename-node">
+                            <div class="form-group">
+                                <label>Parent directory</label>
+                                <input name="parent_path" type="text" class="form-control" value="/" readonly>
+                            </div>
+                            <div class="form-group">
+                                <input name="old_name" type="hidden" class="form-control" value="">
+                            </div>
+                            <div class="form-group">
+                                <label>Node name</label>
+                                <input name="new_name" type="text" class="form-control" placeholder="Node name" value="">
                             </div>
                             <button type="submit" class="btn btn-default">Submit</button>
                         </form>
@@ -181,7 +260,6 @@
         $("div.pub-nodes").on("click", ".table-nodes > .table-nodes-body", function(e){
             var ev = e || window.event;
             var target = ev.target || ev.srcElement;
-            console.log(target);
             if ($(target).is('.table-nodes-col')) {
                 // table-row clicked.
                 var row = $(target).parent();
@@ -279,6 +357,28 @@
             }
         });
 
+        $("form[name='rename-node']").validate({
+            rules: {
+                parent_path: "required",
+                new_name: "required",
+            },
+            messages: {
+                parent_path: "Empty parent directory.",
+                new_name: "Empty node name.",
+            }
+        });
+
+        $("form[name='upload-file']").validate({
+            rules: {
+                parent_path: "required",
+                file: "required",
+            },
+            messages: {
+                parent_path: "Empty parent directory.",
+                file: "Please select file.",
+            }
+        });
+
         // Create folder.
         $("a[name='create-folder']").on('click', function(){
             var current_url = node_table.current_url();
@@ -297,6 +397,7 @@
                         if (data.code == 0) {
                             alert("Create folder success.");
                             node_table.reload();
+                            $("div[name='pub-sidemenu']").jstree(true).refresh();
                         } else {
                             alert("Failed to create folder:" + data.msg);
                         }
@@ -305,6 +406,111 @@
             $(".modal[name='create-folder']").modal("hide");
             e.preventDefault();
             $(this)[0].reset();
+        });
+
+        // delete an node.
+        $("button[role='delete']").on('click', function(){
+            var selected_row = $(".table-nodes > .table-nodes-body").children(".active");
+            if (selected_row.length == 1) {
+                var type = $(selected_row).attr("type");
+                var uuid = $(selected_row).attr("uuid");
+                var path = $(selected_row).attr("path");
+                if (confirm('Are you sure delete this node?')) {
+                    $.ajax({
+                        url: "/api/pub/" + uuid + "/node",
+                        type: "delete",
+                        data:{path: path},
+                        dataType:"json",
+                        success: function(data){
+                            alert(data.msg);
+                            node_table.reload();
+                            $("div[name='pub-sidemenu']").jstree(true).refresh();
+                        }
+                    });
+                }
+            } else if (selected_row.length == 0) {
+                alert("Unselect row.");
+            } else {
+                alert("Selected too many.");
+            }
+        });
+
+        // rename an node.
+        $("button[role='rename']").on('click', function(){
+            var current_url = node_table.current_url();
+            var selected_row = $(".table-nodes > .table-nodes-body").children(".active");
+            if (selected_row.length == 1) {
+                var name = $(selected_row).attr("name");
+                $(".modal[name='rename-node']").find("input[name='parent_path']").val(current_url);
+                $(".modal[name='rename-node']").find("input[name='old_name']").val(name);
+                $(".modal[name='rename-node']").find("input[name='new_name']").val(name);
+                $(".modal[name='rename-node']").modal("show");
+            } else if (selected_row.length == 0) {
+                alert("Unselect row.");
+            } else {
+                alert("Selected too many.");
+            }
+        });
+
+        $("form[name='rename-node']").on('submit', function(e){
+            if (!$(this).valid()) {
+                e.preventDefault();
+                return;
+            }
+
+            $.ajax({
+                    url: "/api/pub/" + node_table.uuid + "/node",
+                    type: "put",
+                    data:$(this).serialize(),
+                    dataType:"json",
+                    success: function(data){
+                        alert(data.msg);
+                        node_table.reload();
+                        $("div[name='pub-sidemenu']").jstree(true).refresh();
+                    }
+            });
+            
+            $(".modal[name='rename-node']").modal("hide");
+            e.preventDefault();
+            $(this)[0].reset();
+        });
+
+        $("a[name='upload-file']").on('click', function(){
+            var current_url = node_table.current_url();
+            $(".modal[name='upload-file']").find("input[name='parent_path']").val(current_url);
+            $(".modal[name='upload-file']").modal('show');
+        });
+
+        $("form[name='upload-file']").on('submit', function(e){
+            if (!$(this).valid()) {
+                e.preventDefault();
+                return;
+            }
+            var formdata = new FormData();
+            formdata.append("parent_path", $(this).find("input[name='parent_path']").val());
+            formdata.append("file", $(this).find("input[name='file']")[0].files[0]);
+            $.ajax({
+                url: "/api/pub/" + node_table.uuid + "/node/upload", 
+                type: "post",
+                processData: false,
+                contentType: false,
+                data:   formdata,
+                success: function(data) {
+                    alert("Upload file success.");
+                    node_table.reload();
+                    $("div[name='pub-sidemenu']").jstree(true).refresh();
+                },
+            });
+            
+            $(".modal[name='upload-file']").modal("hide");
+            e.preventDefault();
+            $(this)[0].reset();
+        });
+        
+        $("a[name='upload-folder']").on('click', function(){
+            var current_url = node_table.current_url();
+            $(".modal[name='upload-folder']").find("input[name='parent_path']").val(current_url);
+            $(".modal[name='upload-folder']").modal('show');
         });
     });
 </script>
