@@ -221,8 +221,17 @@
         $("div[name='pub-sidemenu']").jstree({
             'core' : {
                 'data' : {
-                    'asyn':true, 
-                    'url':"{{url_for('api.nodes', uuid=pub.uuid)}}"
+                    'dataType': 'json', 
+                    'url': function(node) {
+                        console.log('jstree url.');
+                        console.log(node);
+                        return '/api/pub/' + uuid + '/node/dir';
+                    },
+                    'data' : function(node) {
+                        console.log('jstree data.');
+                        console.log(node);
+                        return {'id': node.id}
+                    }
                 }
             }
         });

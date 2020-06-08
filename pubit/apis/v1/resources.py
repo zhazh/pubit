@@ -18,7 +18,7 @@ from pubit.service import Service
 from pubit.apis.decorators import admin_required, node_required
 from pubit.apis.resps import RespSuccess, RespServerWrong, RespArgumentWrong, RespUnauthenticated
 from pubit.apis.v1 import api_v1
-from pubit.apis.v1.schemas import pub_schema, node_schema
+from pubit.apis.v1.schemas import pub_schema, node_schema, dir_schema
 
 class IndexAPI(MethodView):
     def get(self):
@@ -166,32 +166,6 @@ class PubAPI(MethodView):
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
-class NodesAPI(MethodView):
-    decorators = [node_required]
-
-    def get(self, uuid):
-        """ List pub child nodes or root directory tree.
-            if request arg `path` is None, return root directory tree.
-            else return `path` directory children node.
-        """
-        try:
-            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-            path = request.args.get('path', None)
-            if path is None:
-                #: Return pub folder root directory tree.
-                node = Node(base_dir=pub.location, path='/')
-                return jsonify(node.tree)
-            else:
-                #: Return pub item sub directory(path) file and directory.
-                node = Node(base_dir=pub.location, path=path)
-                node_list = list()
-                for subnode in node.children:
-                    node_list.append(node_schema(subnode))
-                return jsonify(node_list)
-        except Exception as e:
-            current_app.logger.error(e)
-            return RespServerWrong().jsonify
-
 class NodeAPI(MethodView):
     decorators = [node_required]
 
@@ -293,6 +267,47 @@ class NodeAPI(MethodView):
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
+class NodeChildrenAPI(MethodView):
+    decorators = [node_required]
+
+    def get(self, uuid):
+        """ Return node children nodes.
+            :attr path: specify the node.
+        """
+        try:
+            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
+            path = request.args.get('path', '/')
+
+            node = Node(base_dir=pub.location, path=path)
+            node_list = list()
+            for subnode in node.children:
+                node_list.append(node_schema(subnode))
+            return jsonify(node_list)
+        except Exception as e:
+            current_app.logger.error(e)
+            return RespServerWrong().jsonify
+
+class NodeDirAPI(MethodView):
+    decorators = [node_required]
+    def get(self, uuid):
+        """ Return node children dirctories for jstree.
+            :attr path: specify the parent directory.
+        """
+        try:
+            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
+            path = request.args.get('path', '/')
+
+            node = Node(base_dir=pub.location, path=path)
+            node_list = list()
+            for subnode in node.children:
+                if subnode.type[1].lower() == 'directory':
+                    node_list.append(dir_schema(subnode))
+            return jsonify(node_list)
+
+        except Exception as e:
+            current_app.logger.error(e)
+            return RespServerWrong().jsonify
+
 class NodeSearchAPI(MethodView):
     decorators = [node_required]
     def get(self, uuid):
@@ -337,8 +352,9 @@ class NodeLoadAPI(MethodView):
 api_v1.add_url_rule('/', view_func=IndexAPI.as_view('index'), methods=['GET'])
 api_v1.add_url_rule('/pub', view_func=PubAPI.as_view('pub'), methods=['GET', 'POST'])
 api_v1.add_url_rule('/pub/<uuid>', view_func=PubAPI.as_view('pub_item'), methods=['GET', 'PUT', 'DELETE'])
-api_v1.add_url_rule('/pub/<uuid>/nodes', view_func=NodesAPI.as_view('nodes'), methods=['GET'])
 api_v1.add_url_rule('/pub/<uuid>/node', view_func=NodeAPI.as_view('node'), methods=['GET', 'POST', 'PUT', 'DELETE'])
+api_v1.add_url_rule('/pub/<uuid>/node/children', view_func=NodeChildrenAPI.as_view('children'), methods=['GET'])
+api_v1.add_url_rule('/pub/<uuid>/node/dir', view_func=NodeDirAPI.as_view('dir'), methods=['GET'])
 api_v1.add_url_rule('/pub/<uuid>/node/search', view_func=NodeSearchAPI.as_view('search'), methods=['GET'])
 api_v1.add_url_rule('/pub/<uuid>/node/download', view_func=NodeLoadAPI.as_view('download'), methods=['GET'])
 api_v1.add_url_rule('/pub/<uuid>/node/upload', view_func=NodeLoadAPI.as_view('upload'), methods=['POST'])
