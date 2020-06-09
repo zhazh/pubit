@@ -119,7 +119,7 @@ NodeTable.prototype.load = function(url) {
         obj.show(nodes);
     };
     $.get(
-        `/api/pub/${this.uuid}/nodes`,
+        `/api/pub/${this.uuid}/node/children`,
         {path: url},
         function(nodes){
             show_nodes(nodes, ndtab_obj);
@@ -148,7 +148,7 @@ NodeTable.prototype.reload = function() {
         obj.show(nodes);
     };
     $.get(
-        `/api/pub/${this.uuid}/nodes`,
+        `/api/pub/${this.uuid}/node/children`,
         {path: url},
         function(nodes){
             show_nodes(nodes, ndtab_obj);

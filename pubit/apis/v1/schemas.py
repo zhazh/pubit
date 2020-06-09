@@ -27,11 +27,3 @@ def node_schema(nodeitem):
         size = nodeitem.size,
         type = nodeitem.type,
     )
-
-def dir_schema(nodeitem):
-    return dict(
-        text = nodeitem.name,
-        path = nodeitem.path,
-        state = 'closed',
-        children = True,
-    )

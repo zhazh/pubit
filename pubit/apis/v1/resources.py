@@ -18,7 +18,7 @@ from pubit.service import Service
 from pubit.apis.decorators import admin_required, node_required
 from pubit.apis.resps import RespSuccess, RespServerWrong, RespArgumentWrong, RespUnauthenticated
 from pubit.apis.v1 import api_v1
-from pubit.apis.v1.schemas import pub_schema, node_schema, dir_schema
+from pubit.apis.v1.schemas import pub_schema, node_schema
 
 class IndexAPI(MethodView):
     def get(self):
@@ -298,11 +298,13 @@ class NodeDirAPI(MethodView):
             path = request.args.get('path', '/')
 
             node = Node(base_dir=pub.location, path=path)
-            node_list = list()
+            node_desc = dict(id=node.path, text=node.name, data=dict(path=node.path), children=True)
+            children_dir = list()
             for subnode in node.children:
                 if subnode.type[1].lower() == 'directory':
-                    node_list.append(dir_schema(subnode))
-            return jsonify(node_list)
+                    children_dir.append(dict(id=subnode.path, text=subnode.name, data=dict(path=subnode.path), children=True))
+            node_desc['children'] = children_dir
+            return jsonify(node_desc)
 
         except Exception as e:
             current_app.logger.error(e)

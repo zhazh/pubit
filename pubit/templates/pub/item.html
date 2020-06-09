@@ -223,14 +223,15 @@
                 'data' : {
                     'dataType': 'json', 
                     'url': function(node) {
-                        console.log('jstree url.');
-                        console.log(node);
+                        // node attrs: id, text, icon, parent, parents,
                         return '/api/pub/' + uuid + '/node/dir';
                     },
                     'data' : function(node) {
-                        console.log('jstree data.');
-                        console.log(node);
-                        return {'id': node.id}
+                        console.log(node.data);
+                        if (node.id === '#') {
+                            return {'path': '/'};
+                        }
+                        return {'path': node.id};
                     }
                 }
             }
