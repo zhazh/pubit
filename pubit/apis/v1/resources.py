@@ -21,25 +21,57 @@ from pubit.apis.v1 import api_v1
 from pubit.apis.v1.schemas import pub_schema, node_schema
 
 class IndexAPI(MethodView):
+    """ Api rescources list.
+        pub_url:                switch (request method):
+                                    case `get`:  return all pubs.
+                                    case `post`: create an pub.
+        pubitem_url:            switch (request method):
+                                    case `get`:  return a single pub.
+                                    case `put`:  modify an pub.
+                                    case `delete`:  delete an pub. 
+        nodeitem_url:           switch (request method):
+                                    case `get`:  return the pub node description.
+                                    case `post`: create an subnode in the pub node.
+                                    case `put`:  modify an pub node.
+                                    case `delete`:  delete an pub node.
+        nodeitem_children_url:  switch(request method):
+                                    case `get`: return the pub node children(folder and file)
+        nodeitem_dir_url:       switch (request method):
+                                    case `get`: return the pub node folder children(only folder)
+        nodeitem_search_url:    switch(request method):
+                                    case `get`: return the search result of keywords in the pub node.
+        nodeitem_load_url:      switch (request methid):
+                                    case `get`:     download the pub node.
+                                    case `post`:    upload file or folder to the pub node.
+    """
+    base_url = 'http://api.pubit.com'
+
     def get(self):
         return jsonify({
-            'version':  '0.0.1',
-            'base_url': 'http://pubit.com/api',
-            'pub_url':  'http://pubit.com/api/pub',
+            'version':              '0.0.1',
+            'base_url':             '%s'%base_url,
+            'pub_url':              '%s/pub'%base_url,      
+            'pubitem_url':          '%s/pub/<uuid>'%base_url,      
+            'nodeitem_url':         '%s/pub/<uuid>/node/<node_id>'%base_url,
+            'nodeitem_children_url':'%s/pub/<uuid>/node/<node_id>/children'%base_url,
+            'nodeitem_dir_url':     '%s/pub/<uuid>/node/<node_id>/dir'%base_url,
+            'nodeitem_search_url':  '%s/pub/<uuid>/node/<node_id>/search'%base_url,
+            'nodeitem_load_url':    '%s/pub/<uuid>/node/<node_id>/load'%base_url,
         })
 
 class PubAPI(MethodView):
-    """ Pub item operation provide for admin.
+    """ Publish folder(Pub) operation api.
     """
     decorators = [admin_required]
 
     def get(self, uuid=None):
         """ Return pub item description.
+            :param uuid: if set to `None` return all pubs list,
+                         otherwise return a single pub.
         """
         try:
-            #pub_id = request.args.get('pub_id', None)
             if uuid is None:
-                # return pub items.
+                # return all pub items.
                 pubs = list()
                 for pub in Pubitem.query.order_by(Pubitem.pubtime.desc()).all():
                     pubs.append(pub_schema(pub))
@@ -170,7 +202,7 @@ class NodeAPI(MethodView):
     decorators = [node_required]
 
     def get(self, uuid):
-        """ Return node description.
+        """ Return an single node description.
         """
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
@@ -352,8 +384,8 @@ class NodeLoadAPI(MethodView):
             return RespServerWrong().jsonify
     
 api_v1.add_url_rule('/', view_func=IndexAPI.as_view('index'), methods=['GET'])
-api_v1.add_url_rule('/pub', view_func=PubAPI.as_view('pub'), methods=['GET', 'POST'])
-api_v1.add_url_rule('/pub/<uuid>', view_func=PubAPI.as_view('pub_item'), methods=['GET', 'PUT', 'DELETE'])
+api_v1.add_url_rule('/pub', view_func=PubAPI.as_view('pubs'), methods=['GET', 'POST'])
+api_v1.add_url_rule('/pub/<uuid>', view_func=PubAPI.as_view('pub'), methods=['GET', 'PUT', 'DELETE'])
 api_v1.add_url_rule('/pub/<uuid>/node', view_func=NodeAPI.as_view('node'), methods=['GET', 'POST', 'PUT', 'DELETE'])
 api_v1.add_url_rule('/pub/<uuid>/node/children', view_func=NodeChildrenAPI.as_view('children'), methods=['GET'])
 api_v1.add_url_rule('/pub/<uuid>/node/dir', view_func=NodeDirAPI.as_view('dir'), methods=['GET'])
