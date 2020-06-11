@@ -224,14 +224,14 @@
                     'dataType': 'json', 
                     'url': function(node) {
                         // node attrs: id, text, icon, parent, parents,
-                        return '/api/pub/' + uuid + '/node/dir';
+                        var node_id = node.id
+                        if (node_id === '#') {
+                            node_id = '|'
+                        }
+                        return `/api/pub/${uuid}/${node_id}/dir`
                     },
                     'data' : function(node) {
                         console.log(node.data);
-                        if (node.id === '#') {
-                            return {'path': '/'};
-                        }
-                        return {'path': node.id};
                     }
                 }
             }
@@ -246,7 +246,7 @@
         // search files in this pub.
         $("form[name='pub-search']").on("submit", function(e){
             $.get(
-                "{{url_for('api.search', uuid=pub.uuid)}}",
+                "{{url_for('api.node_search', uuid=pub.uuid, node_id='|')}}",
                 $(this).serialize(),
                 function(nodes){
                     node_table.show(nodes, 1);

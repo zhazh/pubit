@@ -33,7 +33,7 @@ class NodePath(object):
             :arg base_dir: absolute local path of base directory(server-side).
             :arg path: web path style relactive to base_dir.
         """
-        path = Path.correct_the_path(path)
+        path = NodePath.correct_the_path(path)
         valid_path = list(filter(lambda p: p!='', path.split('/')))
         return os.path.join(base_dir, *valid_path)
 
@@ -76,7 +76,7 @@ class Node(object):
             self.parent_path , self.name = os.path.split(self.path)
         self.local_path = NodePath.path_to_local(self.base_dir, self.path)
         if not os.path.exists(self.local_path):
-            raise TypeError("path:'%s' doesn't exist."%self.local_path)
+            raise TypeError("path:'%s' doesn't exist."%path)
 
     def _set_extra(self):
         """ Set extra attributes required attr `local_path`.

@@ -12,7 +12,8 @@ from flask import (
 )
 from sqlalchemy.exc import IntegrityError
 from pubit.decorators import admin_check, admin_authed, admin_login, admin_logout, admin_required
-from pubit.models import Pubitem, Node
+from pubit.models import Pubitem
+from pubit.node import NodePath, Node, DirectoryNode
 from pubit.extensions import db
 from pubit.service import Service
 from pubit.apis.decorators import admin_required, node_required
@@ -22,25 +23,23 @@ from pubit.apis.v1.schemas import pub_schema, node_schema
 
 class IndexAPI(MethodView):
     """ Api rescources list.
-        pub_url:                switch (request method):
+        pubs_url:           switch (request method):
                                     case `get`:  return all pubs.
                                     case `post`: create an pub.
-        pubitem_url:            switch (request method):
+        pub_url:            switch (request method):
                                     case `get`:  return a single pub.
                                     case `put`:  modify an pub.
                                     case `delete`:  delete an pub. 
-        nodeitem_url:           switch (request method):
-                                    case `get`:  return the pub node description.
+        node_url:           switch (request method):
+                                    case `get`:  return the pub node description, if node is directory also return children
                                     case `post`: create an subnode in the pub node.
                                     case `put`:  modify an pub node.
                                     case `delete`:  delete an pub node.
-        nodeitem_children_url:  switch(request method):
-                                    case `get`: return the pub node children(folder and file)
-        nodeitem_dir_url:       switch (request method):
-                                    case `get`: return the pub node folder children(only folder)
-        nodeitem_search_url:    switch(request method):
+        node_dir_url:       switch(request method):
+                                    case `get`: return directories of the pub node.
+        node_search_url:    switch(request method):
                                     case `get`: return the search result of keywords in the pub node.
-        nodeitem_load_url:      switch (request methid):
+        node_load_url:      switch (request methid):
                                     case `get`:     download the pub node.
                                     case `post`:    upload file or folder to the pub node.
     """
@@ -48,15 +47,14 @@ class IndexAPI(MethodView):
 
     def get(self):
         return jsonify({
-            'version':              '0.0.1',
-            'base_url':             '%s'%base_url,
-            'pub_url':              '%s/pub'%base_url,      
-            'pubitem_url':          '%s/pub/<uuid>'%base_url,      
-            'nodeitem_url':         '%s/pub/<uuid>/node/<node_id>'%base_url,
-            'nodeitem_children_url':'%s/pub/<uuid>/node/<node_id>/children'%base_url,
-            'nodeitem_dir_url':     '%s/pub/<uuid>/node/<node_id>/dir'%base_url,
-            'nodeitem_search_url':  '%s/pub/<uuid>/node/<node_id>/search'%base_url,
-            'nodeitem_load_url':    '%s/pub/<uuid>/node/<node_id>/load'%base_url,
+            'version':          '0.0.1',
+            'base_url':         '%s'%self.__class__.base_url,
+            'pubs_url':         '%s/pub'%self.__class__.base_url,      
+            'pub_url':          '%s/pub/<uuid>'%self.__class__.base_url,      
+            'node_url':         '%s/pub/<uuid>/<node_id>'%self.__class__.base_url,
+            'node_dir_url':     '%s/pub/<uuid>/<node_id>/dir'%self.__class__.base_url,
+            'node_search_url':  '%s/pub/<uuid>/<node_id>/search'%self.__class__.base_url,
+            'node_load_url':    '%s/pub/<uuid>/<node_id>/load'%self.__class__.base_url,
         })
 
 class PubAPI(MethodView):
@@ -201,40 +199,40 @@ class PubAPI(MethodView):
 class NodeAPI(MethodView):
     decorators = [node_required]
 
-    def get(self, uuid):
-        """ Return an single node description.
+    def get(self, uuid, node_id):
+        """ Return an node description.
+            if node is directory will return children in `children` section.
         """
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-            path = request.args.get('path', None)
-            if path is None:
-                return RespArgumentWrong('path', 'missed')
-            else:
-                node = Node(base_dir=pub.location, path=path)
-                return jsonify(node_schema(node))
+            node = pub.node(node_id)
+            return jsonify(node_schema(node))
+        except TypeError as e:
+            current_app.logger.error(e)
+            return RespArgumentWrong('Node', 'is not a valid node').jsonify
         except Exception as e:
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
-    def post(self, uuid):
+    def post(self, uuid, node_id):
         """ Create new folder node.
         """
         try:
-            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()            
-            parent_path = request.form.get('parent_path', None)
-            if parent_path is None:
-                return RespArgumentWrong('parent_path', 'missed').jsonify
-            elif parent_path == '':
-                parent_path = '/'
+            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
+            node = pub.node(node_id)
+            if not isinstance(node, DirectoryNode):
+                return RespArgumentWrong('Node', 'is not an directory').jsonify
 
             name = request.form.get('name', None)
             if name is None:
                 return RespArgumentWrong('name', 'missed').jsonify
             
-            path = os.path.join(parent_path, name)
-            local_path = Node.path_to_local(pub.location, path)
+            local_path = os.path.join(node.local_path, name)
             Service().send('new', target=local_path)
             return RespSuccess().jsonify
+        except TypeError as e:
+            current_app.logger.error(e)
+            return RespArgumentWrong('Node', 'is not a valid node').jsonify
         except FileExistsError as e:
             current_app.logger.error(e)
             return RespServerWrong('The folder already exists').jsonify
@@ -245,17 +243,12 @@ class NodeAPI(MethodView):
             current_app.logger.error(e)
             return RespServerWrong().jsonify
     
-    def put(self, uuid):
+    def put(self, uuid, node_id):
         """ Modify an node name.
         """
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-            parent_path = request.form.get('parent_path', None)
-            if parent_path is None:
-                return RespArgumentWrong('parent_path', 'missed').jsonify
-            elif parent_path == '':
-                parent_path = '/'
-
+            node = pub.node(node_id)
             old_name = request.form.get('old_name', None)
             if old_name is None:
                 return RespArgumentWrong('old_name', 'missed').jsonify
@@ -264,14 +257,15 @@ class NodeAPI(MethodView):
             if new_name is None:
                 return RespArgumentWrong('new_name', 'missed').jsonify
 
-            old_path = os.path.join(parent_path, old_name)
-            old_local_path = Node.path_to_local(pub.location, old_path)
-            new_path = os.path.join(parent_path, new_name)
-            new_local_path = Node.path_to_local(pub.location, new_path)
+            old_local_path = os.path.join(node.local_path, old_name)
+            new_local_path = os.path.join(node.local_path, new_name)
             if os.path.exists(new_local_path):
                 raise FileExistsError(new_local_path)
             Service().send('move', src=old_local_path, dst=new_local_path)
             return RespSuccess().jsonify
+        except TypeError as e:
+            current_app.logger.error(e)
+            return RespArgumentWrong('Node', 'is not a valid node').jsonify
         except FileExistsError as e:
             current_app.logger.error(e)
             return RespServerWrong('The node already exists').jsonify
@@ -282,79 +276,63 @@ class NodeAPI(MethodView):
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
-    def delete(self, uuid):
+    def delete(self, uuid, node_id):
         """ Delete an node(folder or file).
         """
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()            
-            path = request.form.get('path', None)
-            if path is None:
-                return RespArgumentWrong('path', 'missed').jsonify
-            else:
-                #: Return pub item sub directory(path) file and directory.
-                node = Node(base_dir=pub.location, path=path)
-                Service().send('delete', target=node.local_path)
-                return RespSuccess().jsonify
-        except Exception as e:
+            node = pub.node(node_id)
+            Service().send('delete', target=node.local_path)
+            return RespSuccess().jsonify
+        except TypeError as e:
             current_app.logger.error(e)
-            return RespServerWrong().jsonify
-
-class NodeChildrenAPI(MethodView):
-    decorators = [node_required]
-
-    def get(self, uuid):
-        """ Return node children nodes.
-            :attr path: specify the node.
-        """
-        try:
-            pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-            path = request.args.get('path', '/')
-
-            node = Node(base_dir=pub.location, path=path)
-            node_list = list()
-            for subnode in node.children:
-                node_list.append(node_schema(subnode))
-            return jsonify(node_list)
+            return RespArgumentWrong('Node', 'is not a valid node').jsonify
         except Exception as e:
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
 class NodeDirAPI(MethodView):
     decorators = [node_required]
-    def get(self, uuid):
+    def get(self, uuid, node_id):
         """ Return node children dirctories for jstree.
-            :attr path: specify the parent directory.
         """
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-            path = request.args.get('path', '/')
-
-            node = Node(base_dir=pub.location, path=path)
-            node_desc = dict(id=node.path, text=node.name, data=dict(path=node.path), children=True)
+            node = pub.node(node_id)
+            if not isinstance(node, DirectoryNode):
+                return RespArgumentWrong('Node', 'is not an directory').jsonify
+            node_desc = dict(id=node.id, text=node.name, data=dict(path=node.path), children=True)
             children_dir = list()
-            for subnode in node.children:
-                if subnode.type[1].lower() == 'directory':
-                    children_dir.append(dict(id=subnode.path, text=subnode.name, data=dict(path=subnode.path), children=True))
+            for subnode in node.children():
+                if isinstance(subnode, DirectoryNode):
+                    children_dir.append(dict(id=subnode.id, text=subnode.name, data=dict(path=subnode.path), children=True))
             node_desc['children'] = children_dir
             return jsonify(node_desc)
-
+        except TypeError as e:
+            current_app.logger.error(e)
+            return RespArgumentWrong('Node', 'is not a valid node').jsonify
         except Exception as e:
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
 class NodeSearchAPI(MethodView):
     decorators = [node_required]
-    def get(self, uuid):
+    def get(self, uuid, node_id):
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
             keywords = request.args.get('keywords', None)
             if keywords is None:
                 return RespArgumentWrong('keywords', 'missed.').jsonify
-            node = Node(base_dir=pub.location, path='/')
+            node = pub.node(node_id)
+            if not isinstance(node, DirectoryNode):
+                return RespArgumentWrong('Node', 'is not an directory').jsonify
             node_list = list()
             for nd in node.search(keywords):
                 node_list.append(node_schema(nd))
             return jsonify(node_list)
+        except TypeError as e:
+            current_app.logger.error(e)
+            return RespArgumentWrong('Node', 'is not a valid node').jsonify
         except Exception as e:
             current_app.logger.error(e)
             return RespServerWrong().jsonify
@@ -366,19 +344,22 @@ class NodeLoadAPI(MethodView):
         """
         pass
     
-    def post(self, uuid):
+    def post(self, uuid, node_id):
         """ Node(File/Directory) upload.
         """
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-            parent_path = request.form.get('parent_path', None)
-            if parent_path is None:
-                return RespArgumentWrong('parent_path', 'missed').jsonify
+            node = pub.node(node_id)
+            if not isinstance(node, DirectoryNode):
+                return RespArgumentWrong('Node', 'is not an directory').jsonify
             f = request.files['file']
-            basedir = Node.path_to_local(pub.location, parent_path)
+            basedir = node.local_path
             local_path = os.path.join(basedir, f.filename)
             f.save(local_path)
             return RespSuccess().jsonify
+        except TypeError as e:
+            current_app.logger.error(e)
+            return RespArgumentWrong('Node', 'is not a valid node').jsonify
         except Exception as e:
             current_app.logger.error(e)
             return RespServerWrong().jsonify
@@ -386,9 +367,8 @@ class NodeLoadAPI(MethodView):
 api_v1.add_url_rule('/', view_func=IndexAPI.as_view('index'), methods=['GET'])
 api_v1.add_url_rule('/pub', view_func=PubAPI.as_view('pubs'), methods=['GET', 'POST'])
 api_v1.add_url_rule('/pub/<uuid>', view_func=PubAPI.as_view('pub'), methods=['GET', 'PUT', 'DELETE'])
-api_v1.add_url_rule('/pub/<uuid>/node', view_func=NodeAPI.as_view('node'), methods=['GET', 'POST', 'PUT', 'DELETE'])
-api_v1.add_url_rule('/pub/<uuid>/node/children', view_func=NodeChildrenAPI.as_view('children'), methods=['GET'])
-api_v1.add_url_rule('/pub/<uuid>/node/dir', view_func=NodeDirAPI.as_view('dir'), methods=['GET'])
-api_v1.add_url_rule('/pub/<uuid>/node/search', view_func=NodeSearchAPI.as_view('search'), methods=['GET'])
-api_v1.add_url_rule('/pub/<uuid>/node/download', view_func=NodeLoadAPI.as_view('download'), methods=['GET'])
-api_v1.add_url_rule('/pub/<uuid>/node/upload', view_func=NodeLoadAPI.as_view('upload'), methods=['POST'])
+api_v1.add_url_rule('/pub/<uuid>/<node_id>', view_func=NodeAPI.as_view('node'), methods=['GET', 'POST', 'PUT', 'DELETE'])
+api_v1.add_url_rule('/pub/<uuid>/<node_id>/dir', view_func=NodeDirAPI.as_view('node_dir'), methods=['GET'])
+api_v1.add_url_rule('/pub/<uuid>/<node_id>/search', view_func=NodeSearchAPI.as_view('node_search'), methods=['GET'])
+api_v1.add_url_rule('/pub/<uuid>/<node_id>/download', view_func=NodeLoadAPI.as_view('node_download'), methods=['GET'])
+api_v1.add_url_rule('/pub/<uuid>/<node_id>/upload', view_func=NodeLoadAPI.as_view('node_upload'), methods=['POST'])

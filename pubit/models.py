@@ -12,7 +12,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import desc, func, exists, and_, or_
 from .extensions import db
 from .utils import unit_size, standard_timestr, is_binary_file
-from .node import NodeFactory
+from .node import Node, DirectoryNode, FileNode, NodeFactory
 
 class Pubitem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
