@@ -98,10 +98,6 @@
                     <div class="modal-body">
                         <form name="upload-file" enctype='multipart/form-data'>
                             <div class="form-group">
-                                <label>Upload directory</label>
-                                <input name="parent_path" type="text" class="form-control" readonly>
-                            </div>
-                            <div class="form-group">
                                 <label>File</label>
                                 <input name="file" type="file" class="form-control"/>
                             </div>
@@ -123,10 +119,6 @@
                     <div class="modal-body">
                         <form name="upload-folder" enctype='multipart/form-data'>
                             <div class="form-group">
-                                <label>Upload directory</label>
-                                <input name="parent_path" type="text" class="form-control" readonly>
-                            </div>
-                            <div class="form-group">
                                 <label>Local directory</label>
                                 <input name="dir" type="file" class="form-control" webkitdirectory directory multiple/>
                             </div>
@@ -147,7 +139,6 @@
                     </div>
                     <div class="modal-body">
                         <form name="create-folder">
-                            <input name="parent_path" type="hidden" class="form-control" value="">
                             <div class="form-group">
                                 <label>Folder name</label>
                                 <input name="name" type="text" class="form-control" placeholder="Folder name" value="New folder">
@@ -170,15 +161,11 @@
                     <div class="modal-body">
                         <form name="rename-node">
                             <div class="form-group">
-                                <label>Parent directory</label>
-                                <input name="parent_path" type="text" class="form-control" value="/" readonly>
-                            </div>
-                            <div class="form-group">
                                 <input name="old_name" type="hidden" class="form-control" value="">
                             </div>
                             <div class="form-group">
                                 <label>Node name</label>
-                                <input name="new_name" type="text" class="form-control" placeholder="Node name" value="">
+                                <input name="new_name" type="text" class="form-control" placeholder="Node new name" value="">
                             </div>
                             <button type="submit" class="btn btn-default">Submit</button>
                         </form>
@@ -215,7 +202,7 @@
 
     $(document).ready(function(){
         // show pub root nodes at start.
-        node_table.load('/');
+        node_table.load('|');
 
         // pub side-menu tree init.
         $("div[name='pub-sidemenu']").jstree({
@@ -229,9 +216,6 @@
                             node_id = '|'
                         }
                         return `/api/pub/${uuid}/${node_id}/dir`
-                    },
-                    'data' : function(node) {
-                        console.log(node.data);
                     }
                 }
             }
@@ -239,8 +223,8 @@
         
         // pub side-menu tree selected.
         $("div[name='pub-sidemenu']").on("changed.jstree", function (e, data) {
-            url = data.selected[0];
-            node_table.load(url);
+            id = data.selected[0];
+            node_table.load(id);
         });
 
         // search files in this pub.
@@ -259,8 +243,8 @@
 
         // listen path-link click then load and show the path nodes.
         $("div.pub-main").on("click", "a[name='path-link']", function(e){
-            var path = $(this).attr('path');
-            node_table.load(path);
+            var id = $(this).attr('id');
+            node_table.load(id);
             e.stopPropagation();
         });
 
@@ -286,18 +270,19 @@
 
         // double click to open node(play audio/video).
         $("div.pub-nodes").on("dblclick", ".table-nodes > .table-nodes-body > .table-nodes-row", function(e){
+            var id = $(this).attr('id');
             var name = $(this).attr('name');
             var type = $(this).attr('type');
             var uuid = $(this).attr("uuid");
-            var url = $(this).attr('path');
-            console.log(name);
+            var download_url = `/pub/${uuid}/${id}/download`;
+            
             if (type === 'directory') {
-                node_table.load(url);
+                node_table.load(id);
             } else {
                 // open support file type.
                 if (type === 'text file') {
                     // open text file.
-                    $.get("/pub/text/"+uuid+"?path="+url,
+                    $.get(`/pub/${uuid}/${id}/text`,
                         function(data,status){
                             var content = $('<div>' + data + '</div>');
                             $(".modal[name='open-text']").children('.modal-dialog').children('.modal-content').children('.modal-header').children('.modal-title').html(name);
@@ -306,15 +291,12 @@
                             $(".modal[name='open-text']").modal('show');     
                     });
                 } else if (type === 'audio file') {
-                    var download_url = "/pub/download/"+uuid+"?path="+url;
                     $(".modal[name='audio-player']").children('.modal-dialog').children('.modal-content').children('.modal-body').children('audio').attr('src', download_url);
                     $(".modal[name='audio-player']").modal('show'); 
                 } else if (type === 'video file') {
-                    var download_url = "/pub/download/"+uuid+"?path="+url;
                     $(".modal[name='video-player']").children('.modal-dialog').children('.modal-content').children('.modal-body').children('video').attr('src', download_url);
                     $(".modal[name='video-player']").modal('show');
                 } else if (type === 'photo') {
-                    var download_url = "/pub/download/"+uuid+"?path="+url;
                     $(".modal[name='image']").children('.modal-dialog').children('.modal-content').children('.modal-body').children('img').attr('src', download_url);
                     $(".modal[name='image']").modal('show');
                 } else {
@@ -337,16 +319,9 @@
         $("button[role='download']").on("click", function(e){
             var selected_row = $(".table-nodes > .table-nodes-body").children(".active");
             if (selected_row.length == 1) {
-                var type = $(selected_row).attr("type");
                 var uuid = $(selected_row).attr("uuid");
-                var path = $(selected_row).attr("path");
-                if (type === "directory") {
-                    // directory download.
-                    window.location.href = "/pub/download/"+uuid+"?path="+path;
-                } else {
-                    // file download.
-                    window.location.href = "/pub/download/"+uuid+"?path="+path;
-                }
+                var id = $(selected_row).attr("id");
+                window.location.href = `/pub/${uuid}/${id}/download`;
             } else if (selected_row.length == 0) {
                 alert("Unselect row.");
             } else {
@@ -372,11 +347,9 @@
 
         $("form[name='rename-node']").validate({
             rules: {
-                parent_path: "required",
                 new_name: "required",
             },
             messages: {
-                parent_path: "Empty parent directory.",
                 new_name: "Empty node name.",
             }
         });
@@ -394,8 +367,6 @@
 
         // Create folder.
         $("a[name='create-folder']").on('click', function(){
-            var current_url = node_table.current_url();
-            $(".modal[name='create-folder']").find("input[name='parent_path']").val(current_url);
             $(".modal[name='create-folder']").modal("show");
         });
 
@@ -404,16 +375,14 @@
                 e.preventDefault();
                 return;
             }
-            $.post("/api/pub/" + node_table.uuid + "/node", 
+            var uuid = node_table.uuid;
+            var node_id = node_table.current_id();
+            $.post(`/api/pub/${uuid}/${node_id}`, 
                     $(this).serialize(), 
                     function(data) {
-                        if (data.code == 0) {
-                            alert("Create folder success.");
-                            node_table.reload();
-                            $("div[name='pub-sidemenu']").jstree(true).refresh();
-                        } else {
-                            alert("Failed to create folder:" + data.msg);
-                        }
+                        alert("Create folder success.");
+                        node_table.reload();
+                        $("div[name='pub-sidemenu']").jstree(true).refresh();   // bug.
                     }, "json"
             );
             $(".modal[name='create-folder']").modal("hide");
@@ -425,19 +394,17 @@
         $("button[role='delete']").on('click', function(){
             var selected_row = $(".table-nodes > .table-nodes-body").children(".active");
             if (selected_row.length == 1) {
-                var type = $(selected_row).attr("type");
                 var uuid = $(selected_row).attr("uuid");
-                var path = $(selected_row).attr("path");
+                var node_id = $(selected_row).attr("id");
                 if (confirm('Are you sure delete this node?')) {
                     $.ajax({
-                        url: "/api/pub/" + uuid + "/node",
+                        url: `/api/pub/${uuid}/${node_id}`,
                         type: "delete",
-                        data:{path: path},
                         dataType:"json",
                         success: function(data){
                             alert(data.msg);
                             node_table.reload();
-                            $("div[name='pub-sidemenu']").jstree(true).refresh();
+                            $("div[name='pub-sidemenu']").jstree(true).refresh();   // bug.
                         }
                     });
                 }
@@ -450,11 +417,9 @@
 
         // rename an node.
         $("button[role='rename']").on('click', function(){
-            var current_url = node_table.current_url();
             var selected_row = $(".table-nodes > .table-nodes-body").children(".active");
             if (selected_row.length == 1) {
                 var name = $(selected_row).attr("name");
-                $(".modal[name='rename-node']").find("input[name='parent_path']").val(current_url);
                 $(".modal[name='rename-node']").find("input[name='old_name']").val(name);
                 $(".modal[name='rename-node']").find("input[name='new_name']").val(name);
                 $(".modal[name='rename-node']").modal("show");
@@ -470,16 +435,17 @@
                 e.preventDefault();
                 return;
             }
-
+            var uuid = node_table.uuid;
+            var node_id = node_table.current_id();
             $.ajax({
-                    url: "/api/pub/" + node_table.uuid + "/node",
+                    url: `/api/pub/${uuid}/${node_id}`,
                     type: "put",
                     data:$(this).serialize(),
                     dataType:"json",
                     success: function(data){
                         alert(data.msg);
                         node_table.reload();
-                        $("div[name='pub-sidemenu']").jstree(true).refresh();
+                        $("div[name='pub-sidemenu']").jstree(true).refresh();   // bug.
                     }
             });
             
@@ -489,8 +455,6 @@
         });
 
         $("a[name='upload-file']").on('click', function(){
-            var current_url = node_table.current_url();
-            $(".modal[name='upload-file']").find("input[name='parent_path']").val(current_url);
             $(".modal[name='upload-file']").modal('show');
         });
 
@@ -499,11 +463,12 @@
                 e.preventDefault();
                 return;
             }
+            var uuid = node_table.uuid;
+            var node_id = node_table.current_id();
             var formdata = new FormData();
-            formdata.append("parent_path", $(this).find("input[name='parent_path']").val());
             formdata.append("file", $(this).find("input[name='file']")[0].files[0]);
             $.ajax({
-                url: "/api/pub/" + node_table.uuid + "/node/upload", 
+                url: `/api/pub/${uuid}/${node_id}/upload`, 
                 type: "post",
                 processData: false,
                 contentType: false,
@@ -511,7 +476,7 @@
                 success: function(data) {
                     alert("Upload file success.");
                     node_table.reload();
-                    $("div[name='pub-sidemenu']").jstree(true).refresh();
+                    $("div[name='pub-sidemenu']").jstree(true).refresh();   // bug.
                 },
             });
             
@@ -521,8 +486,6 @@
         });
         
         $("a[name='upload-folder']").on('click', function(){
-            var current_url = node_table.current_url();
-            $(".modal[name='upload-folder']").find("input[name='parent_path']").val(current_url);
             $(".modal[name='upload-folder']").modal('show');
         });
     });

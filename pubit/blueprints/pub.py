@@ -10,7 +10,8 @@ from flask import (
     request, session, abort, send_from_directory, make_response
 )
 from pubit.forms import PubAuthForm
-from pubit.models import Pubitem, Node
+from pubit.models import Pubitem
+from pubit.node import Node, DirectoryNode, FileNode
 from pubit.service import Service
 
 pub_bp = Blueprint('pub', __name__)
@@ -52,11 +53,10 @@ def item(uuid):
             return redirect(url_for('pub.login'))
     return render_template('pub/item.html', pub=pub)
 
-@pub_bp.route('/download/<uuid>')
-def download(uuid):
+@pub_bp.route('/<uuid>/<node_id>/download')
+def download(uuid, node_id):
     pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-    path = request.args.get('path', None)
-    if pub is None or path is None:
+    if pub is None:
         abort(404)
     if not pub.is_public:
         # protected.
@@ -64,8 +64,8 @@ def download(uuid):
         if session_pub is None or session_pub != uuid:
             return redirect(url_for('pub.login'))
     try:
-        node = Node(base_dir=pub.location, path=path)
-        if os.path.isdir(node.local_path):
+        node = pub.node(node_id)
+        if isinstance(node, DirectoryNode):
             temp_dir = current_app.config['TEMP_DIR']
             _path, _filename = os.path.split(node.local_path)
             Service().send('compress', targets=[node.local_path], dst_name=_filename, temp_dir=temp_dir)
@@ -86,11 +86,11 @@ def download(uuid):
         current_app.logger.error(e)
         abort(500)
 
-@pub_bp.route('/text/<uuid>')
-def text(uuid):
+#: show text file in client, fobidden html/js?
+@pub_bp.route('/<uuid>/<node_id>/text')
+def text(uuid, node_id):
     pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
-    path = request.args.get('path', None)
-    if pub is None or path is None:
+    if pub is None:
         abort(404)
     if not pub.is_public:
         # protected.
@@ -98,9 +98,9 @@ def text(uuid):
         if session_pub is None or session_pub != uuid:
             return redirect(url_for('pub.login'))
     try:
-        node = Node(base_dir=pub.location, path=path)
-        if not os.path.isfile(node.local_path):
-            raise TypeError("path:'%s' not an file"%path)
+        node = pub.node(node_id)
+        if not isinstance(node, FileNode):
+            raise TypeError("node id:'%s' not an file"%node_id)
         html_text = ''
         with open(node.local_path) as f:
             for line in f:

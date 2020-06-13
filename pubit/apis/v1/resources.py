@@ -7,13 +7,13 @@ Provide resources for ajax request.
 import os
 from flask.views import MethodView
 from flask import (
-    render_template, redirect, url_for, 
-    request, current_app, session, jsonify
+    render_template, redirect, url_for, request, current_app,
+    session, jsonify, send_from_directory, make_response
 )
 from sqlalchemy.exc import IntegrityError
 from pubit.decorators import admin_check, admin_authed, admin_login, admin_logout, admin_required
 from pubit.models import Pubitem
-from pubit.node import NodePath, Node, DirectoryNode
+from pubit.node import NodePath, NodeFactory, Node, DirectoryNode
 from pubit.extensions import db
 from pubit.service import Service
 from pubit.apis.decorators import admin_required, node_required
@@ -54,7 +54,7 @@ class IndexAPI(MethodView):
             'node_url':         '%s/pub/<uuid>/<node_id>'%self.__class__.base_url,
             'node_dir_url':     '%s/pub/<uuid>/<node_id>/dir'%self.__class__.base_url,
             'node_search_url':  '%s/pub/<uuid>/<node_id>/search'%self.__class__.base_url,
-            'node_load_url':    '%s/pub/<uuid>/<node_id>/load'%self.__class__.base_url,
+            'node_upload_url':  '%s/pub/<uuid>/<node_id>/upload'%self.__class__.base_url,
         })
 
 class PubAPI(MethodView):
@@ -95,12 +95,11 @@ class PubAPI(MethodView):
             path = request.form.get("path")
             if path is None:
                 return RespArgumentWrong('path', 'missed').jsonify
-            else:
-                base_dir = current_app.config['ADMIN_HOME']
-                node = Node(base_dir=base_dir, path=path)
-                location = node.local_path
-                if not os.path.isdir(location):
-                    return RespArgumentWrong('path', 'invalid').jsonify
+            base_dir = current_app.config['ADMIN_HOME']
+            node = NodeFactory.create(key=path, base_dir=base_dir)
+            if not isinstance(node, DirectoryNode):
+                return RespArgumentWrong('path', 'invalid').jsonify
+            location = node.local_path
 
             access = request.form.get("access", "public")
             if access == 'public':
@@ -131,6 +130,8 @@ class PubAPI(MethodView):
             current_app.logger.error(e)
             return RespArgumentWrong('name', 'has existed.').jsonify
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             db.session.rollback()
             current_app.logger.error(e)
             return RespServerWrong().jsonify
@@ -337,13 +338,8 @@ class NodeSearchAPI(MethodView):
             current_app.logger.error(e)
             return RespServerWrong().jsonify
 
-class NodeLoadAPI(MethodView):
+class NodeUploadAPI(MethodView):
     decorators = [node_required]
-    def get(self, uuid):
-        """ Node(File/Directory) download.
-        """
-        pass
-    
     def post(self, uuid, node_id):
         """ Node(File/Directory) upload.
         """
@@ -370,5 +366,4 @@ api_v1.add_url_rule('/pub/<uuid>', view_func=PubAPI.as_view('pub'), methods=['GE
 api_v1.add_url_rule('/pub/<uuid>/<node_id>', view_func=NodeAPI.as_view('node'), methods=['GET', 'POST', 'PUT', 'DELETE'])
 api_v1.add_url_rule('/pub/<uuid>/<node_id>/dir', view_func=NodeDirAPI.as_view('node_dir'), methods=['GET'])
 api_v1.add_url_rule('/pub/<uuid>/<node_id>/search', view_func=NodeSearchAPI.as_view('node_search'), methods=['GET'])
-api_v1.add_url_rule('/pub/<uuid>/<node_id>/download', view_func=NodeLoadAPI.as_view('node_download'), methods=['GET'])
-api_v1.add_url_rule('/pub/<uuid>/<node_id>/upload', view_func=NodeLoadAPI.as_view('node_upload'), methods=['POST'])
+api_v1.add_url_rule('/pub/<uuid>/<node_id>/upload', view_func=NodeUploadAPI.as_view('node_upload'), methods=['POST'])

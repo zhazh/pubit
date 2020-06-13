@@ -269,17 +269,29 @@
             }
         });
 
+
         // pub-create directory select jstree initialize.
         $("div[name='pub-create-dir-select']").jstree({
             'core' : {
-                'data' : {'asyn':true, 'url':"{{url_for('admin.dir_tree')}}"}
+                'data' : {
+                    'dataType': 'json', 
+                    'url': function(node) {
+                        // node attrs: id, text, icon, parent, parents,
+                        var node_id = node.id
+                        if (node_id === '#') {
+                            node_id = '|'
+                        }
+                        return `/admin/dir/${node_id}`;
+                    },
+                }
             }
         });
-
+        
         // pub-create directory select jstree changed.
         $("div[name='pub-create-dir-select']").on("changed.jstree", function (e, data) {
-            url = data.selected[0];
-            $("form[name='pub-create']").find("input[name='path']").val(url);
+            var node_id = data.selected[0];
+            var path = node_id.replace(/\|/g, '/');
+            $("form[name='pub-create']").find("input[name='path']").val(path);
         });
 
         $("input[name='access']").click(function(){

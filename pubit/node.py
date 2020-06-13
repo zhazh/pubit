@@ -45,7 +45,7 @@ class Node(object):
         :attr name:         node name, a string.
         :attr base_dir:     absolute local path of base directory.
         :attr path:         node relative path use linux-style to 'base_dir', such as '/', '/home', '/home/data'.
-        :attr parent_path:  node parent path, relative path, if node path is '/', parent_path will set to be `None`.
+        :attr parent_id:    parent node id, relative path, if node path is '/', parent_id will set to be `None`.
         :attr local_path:   node local path.
         :attr type:         node type name.
         Node extra attributes:
@@ -71,9 +71,11 @@ class Node(object):
         self.path = NodePath.correct_the_path(path)
         if self.path == '/':
             self.name = 'Home'          # root path name is 'Home'
-            self.parent_path = None     # root path parent path is None.
+            self.parent_path = None
+            self.parent_id = None       # root path parent id is None.
         else:
-            self.parent_path , self.name = os.path.split(self.path)
+            self.parent_path, self.name = os.path.split(self.path)
+            self.parent_id = self.parent_path.replace('/', '|')
         self.local_path = NodePath.path_to_local(self.base_dir, self.path)
         if not os.path.exists(self.local_path):
             raise TypeError("path:'%s' doesn't exist."%path)
@@ -94,6 +96,9 @@ class Node(object):
     @property
     def id(self):
         return self.path.replace('/', '|')
+
+    def is_type(self, node_type_class):
+        return isinstance(self, node_type_class)
 
 class DirectoryNode(Node):
     def __init__(self, key, base_dir=None):

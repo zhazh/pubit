@@ -15,31 +15,30 @@
 
 var NodeTable = function(uuid) {
     this.uuid = uuid;
-    this.url_stack = new Array();
+    this.id_stack = new Array();
 };
 
 NodeTable.prototype.selector_pub_path = "div[name='pub-path']";
 NodeTable.prototype.selector_pub_nodes = "div[name='pub-nodes']";
 NodeTable.prototype.selector_button_back = "a[name='nav-back']";
 
-NodeTable.prototype.update_pub_path = function(url) {
-    
-    var url_arr = url.split('/');
-    if (url_arr.length == 2 && url_arr[1] == '') {
-        delete url_arr[0];
+NodeTable.prototype.update_pub_path = function(id) {
+    var id_arr = id.split('|');
+    if (id_arr.length == 2 && id_arr[1] == '') {
+        delete id_arr[0];
     }
     var breadcrumb = $("<ol class='breadcrumb'></ol>");
-    for (i=0; i<url_arr.length; i++) {
+    for (i=0; i<id_arr.length; i++) {
         var li = $('<li></li>');
         if(i==0) {
             // root path named 'Home'.
-            var href = $("<a name='path-link' path='/' href='javascript:void(0);'>Home</a>");
+            var href = $("<a name='path-link' id='|' href='javascript:void(0);'>Home</a>");
         } else {
-            var path = '';
+            var node_id = '';
             for (j=1; j<=i; j++) {
-                path = path + '/' + url_arr[j];
+                node_id = node_id + '|' + id_arr[j];
             }
-            var href = $("<a name='path-link' path='" + path + "' href='javascript:void(0);'>" + url_arr[i] + "</a>");
+            var href = $("<a name='path-link' id='" + node_id + "' href='javascript:void(0);'>" + id_arr[i] + "</a>");
         }
         li.append(href);
         breadcrumb.append(li);
@@ -92,9 +91,9 @@ NodeTable.prototype.show = function(nodes, style) {
         }
 
         var item = $("<div class='" + item_class + "' id='" + node_id + "' type='" + node_type + "' uuid='" + uuid + "' path='" + path + "' name='" + node_name + "'></div>");
-        var directory = $("<div class='table-nodes-col'>" + "<a name='path-link' href='javascript:void(0);' path='" + nodes[i].parent_path + "' name='parent-path'>" + nodes[i].parent_path + "</a>" + "</div>");
+        var directory = $("<div class='table-nodes-col'>" + "<a name='path-link' href='javascript:void(0);' id='" + nodes[i].parent_id + "' name='parent-path'>" + nodes[i].parent_path + "</a>" + "</div>");
         var name = $("<div class='table-nodes-col'>" + nodes[i].name + "</div>");
-        var type=$("<div class='table-nodes-col'>" + nodes[i].type[1] + "</div>");
+        var type=$("<div class='table-nodes-col'>" + nodes[i].type + "</div>");
         var create = $("<div class='table-nodes-col'>" + nodes[i].create + "</div>");
         var size = $("<div class='table-nodes-col'>" + nodes[i].size + "</div>");
         
@@ -113,45 +112,46 @@ NodeTable.prototype.show = function(nodes, style) {
     $(this.selector_pub_nodes).append(table);
 };
 
-NodeTable.prototype.load = function(url) {
-    this.update_pub_path(url);
+NodeTable.prototype.load = function(id) {
+    this.update_pub_path(id);
     var ndtab_obj = this;
     var show_nodes = function(nodes, obj) {
         obj.show(nodes);
     };
     $.get(
-        `/api/pub/${this.uuid}/node/children`,
-        {path: url},
-        function(nodes){
+        `/api/pub/${this.uuid}/${id}`,
+        function(data){
+            var nodes = data.children;
+            console.log(nodes);
             show_nodes(nodes, ndtab_obj);
         }, 
         "json"
     );
     
-    this.url_stack.push(url);
+    this.id_stack.push(id);
 
-    if (this.url_stack.length<2) {
+    if (this.id_stack.length<2) {
         $(this.selector_button_back).addClass('disabled');
     } else {
         $(this.selector_button_back).removeClass('disabled');
     }
 };
 
-NodeTable.prototype.current_url = function() {
-    return this.url_stack[this.url_stack.length - 1];
+NodeTable.prototype.current_id = function() {
+    return this.id_stack[this.id_stack.length - 1];
 }
 
 NodeTable.prototype.reload = function() {
-    var url = this.current_url();
-    this.update_pub_path(url);
+    var id = this.current_id();
+    this.update_pub_path(id);
     var ndtab_obj = this;
     var show_nodes = function(nodes, obj) {
         obj.show(nodes);
     };
     $.get(
-        `/api/pub/${this.uuid}/node/children`,
-        {path: url},
-        function(nodes){
+        `/api/pub/${this.uuid}/${id}`,
+        function(data){
+            var nodes = data.children;
             show_nodes(nodes, ndtab_obj);
         }, 
         "json"
@@ -159,10 +159,10 @@ NodeTable.prototype.reload = function() {
 };
 
 NodeTable.prototype.nav_back = function() {
-    if (this.url_stack.length >= 2) {
-        this.url_stack.pop();    // current page.
-        var url = this.url_stack.pop();
-        this.load(url);
+    if (this.id_stack.length >= 2) {
+        this.id_stack.pop();    // current page.
+        var id = this.id_stack.pop();
+        this.load(id);
     }
 };
 
