@@ -183,6 +183,11 @@ a, a:link, a:hover, a:visited, a:active {
 .main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-body {
 	background-color: #fff;
 	display: table-row-group;
+
+	-webkit-user-select:none;
+	-moz-user-select:none;
+	-ms-user-select:none;
+	user-select:none;
 }
 
 .main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-head > .table-nodes-row {

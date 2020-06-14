@@ -1,0 +1,49 @@
+table.jstable {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+
+	-webkit-user-select:none;
+	-moz-user-select:none;
+	-ms-user-select:none;
+	user-select:none;
+}
+
+table.jstable thead tr {
+    background-color: #eee;
+    border-bottom: 1px solid #bababa;
+    height: 30px;
+}
+
+table.jstable thead tr th {
+    border-right: 1px solid #ccc;
+    padding-left: 15px;
+}
+
+table.jstable thead tr th:last-child {
+    border-right: none;
+}
+
+table.jstable tbody tr {
+    border: 1px solid #fff;
+    height: 30px;
+    cursor: default;
+}
+
+table.jstable tbody tr:hover {
+	border-color: #bbdefb;
+	background-color: #e3f2fd;
+}
+
+table.jstable tbody tr.active {
+	border-color: #bbdefb;
+	background-color: #90caf9;
+}
+
+table.jstable tbody tr td {
+    padding-left: 15px;
+}
+
+img.loading {
+    content: url(loading.gif);
+}
