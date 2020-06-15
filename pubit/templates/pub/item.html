@@ -197,93 +197,44 @@
 
 {% block script %}
 <script>
-    var uuid = "{{pub.uuid}}";
-    node_table = new NodeTable(uuid);
-
     $(document).ready(function(){
-        // show pub root nodes at start.
-        node_table.load('|');
+        var uuid = "{{pub.uuid}}";
 
-        // pub side-menu tree init.
-        $("div[name='pub-sidemenu']").jstree({
-            'core' : {
-                'data' : {
-                    'dataType': 'json', 
-                    'url': function(node) {
-                        // node attrs: id, text, icon, parent, parents,
-                        var node_id = node.id
-                        if (node_id === '#') {
-                            node_id = '|'
-                        }
-                        return `/api/pub/${uuid}/${node_id}/dir`
-                    }
-                }
-            }
-        });
-        
-        // pub side-menu tree selected.
-        $("div[name='pub-sidemenu']").on("changed.jstree", function (e, data) {
-            id = data.selected[0];
-            node_table.load(id);
+        $("div[name='pub-nodes']").jstable({
+            source: {
+                url:    `/api/pub/${uuid}/|`,
+                header: ['name', 'type', 'create', 'size'],
+                filter: function(data){
+                    return data.children;
+                },
+            },
         });
 
-        // search files in this pub.
-        $("form[name='pub-search']").on("submit", function(e){
-            $.get(
-                "{{url_for('api.node_search', uuid=pub.uuid, node_id='|')}}",
-                $(this).serialize(),
-                function(nodes){
-                    node_table.show(nodes, 1);
-                    $("input[name='keywords']").val('');
-                }, 
-                "json"
-            );
-            return false;
+        var table_nav = new tableNav(
+                                uuid, 
+                                $("div[name='pub-nodes']")[0].table, 
+                                $("a[name='nav-back']"), 
+                                $("div[name='pub-path']")
+                        );
+
+        $("div[name='pub-nodes']").on('select', function(e, table, selected_rows){
+            $("div.collapse-toolbar").slideDown();
         });
 
-        // listen path-link click then load and show the path nodes.
-        $("div.pub-main").on("click", "a[name='path-link']", function(e){
-            var id = $(this).attr('id');
-            node_table.load(id);
-            e.stopPropagation();
-        });
-
-        // To navgation back.
-        $("a[name='nav-back']").on('click', function(){
-            node_table.nav_back();
-        });
-
-        // table-nodes-row selected.
-        $("div.pub-nodes").on("click", ".table-nodes > .table-nodes-body", function(e){
-            var ev = e || window.event;
-            var target = ev.target || ev.srcElement;
-            if ($(target).is('.table-nodes-col')) {
-                // table-row clicked.
-                var row = $(target).parent();
-                $(row).addClass('active');
-                $(row).siblings().removeClass('active');
-                $("div.collapse-toolbar").slideDown();
-            } else {
-                $("div.collapse-toolbar").slideUp();
-            }
-        });
-
-        // double click to open node(play audio/video).
-        $("div.pub-nodes").on("dblclick", ".table-nodes > .table-nodes-body > .table-nodes-row", function(e){
-            var id = $(this).attr('id');
-            var name = $(this).attr('name');
-            var type = $(this).attr('type');
-            var uuid = $(this).attr("uuid");
+        $("div[name='pub-nodes']").on('open', function(e, table, target_row){
+            var id = target_row.id;
+            var name = target_row.name;
+            var type = target_row.type.toLowerCase();
             var download_url = `/pub/${uuid}/${id}/download`;
-            
+
             if (type === 'directory') {
-                node_table.load(id);
+                table_nav.nav_go(id);
             } else {
                 // open support file type.
                 if (type === 'text file') {
                     // open text file.
                     $.get(`/pub/${uuid}/${id}/text`,
-                        function(data,status){
+                        function(data, status){
                             var content = $('<div>' + data + '</div>');
                             $(".modal[name='open-text']").children('.modal-dialog').children('.modal-content').children('.modal-header').children('.modal-title').html(name);
                             $(".modal[name='open-text']").children('.modal-dialog').children('.modal-content').children('.modal-body').empty();
@@ -305,6 +256,61 @@
             }
         });
 
+        // pub side-menu tree init.
+        $("div[name='pub-sidemenu']").jstree({
+            'core' : {
+                'data' : {
+                    'dataType': 'json', 
+                    'url': function(node) {
+                        // node attrs: id, text, icon, parent, parents,
+                        var node_id = node.id
+                        if (node_id === '#') {
+                            node_id = '|'
+                        }
+                        return `/api/pub/${uuid}/${node_id}/dir`
+                    }
+                }
+            }
+        });
+        
+        // pub side-menu tree selected.
+        $("div[name='pub-sidemenu']").on("changed.jstree", function (e, data) {
+            var id = data.selected[0];
+            table_nav.nav_go(id);
+        });
+
+        // search files in this pub.
+        $("form[name='pub-search']").on("submit", function(e){
+            var table = $("div[name='pub-nodes']")[0].table;
+            table.load({
+                loading_timeout: 15,
+                source: {
+                    url:    `/api/pub/${uuid}/|/search`,
+                    data:   $(this).serialize(),
+                    header: ['parent_path', 'name', 'type', 'create', 'size'],
+                    col: function(col_str, col_name, row){
+                        if (col_name === 'parent_path') {
+                            return `<a href="javascript:void(0);" name="path-link" id="${row.parent_id}">${col_str}</a>`;
+                        }
+                        return col_str;
+                    },
+                },
+            });
+            return false;
+        });
+
+        // Search result and path navigation has `path-link` link.
+        $("div.pub-main").on("click", "a[name='path-link']", function(e){
+            var id = $(this).attr('id');
+            table_nav.nav_go(id);
+            e.stopPropagation();
+        });
+        
+        // To navgation back.
+        $("a[name='nav-back']").on('click', function(){
+            table_nav.nav_back();
+        });
+        
         // when audio-player dismiss stop audio playing.
         $(".modal[name='audio-player']").on("hide.bs.modal", function(e){
             $(".modal[name='audio-player']").children('.modal-dialog').children('.modal-content').children('.modal-body').children('audio')[0].pause();
@@ -317,25 +323,22 @@
 
         // download file or directory.
         $("button[role='download']").on("click", function(e){
-            var selected_row = $(".table-nodes > .table-nodes-body").children(".active");
-            if (selected_row.length == 1) {
-                var uuid = $(selected_row).attr("uuid");
-                var id = $(selected_row).attr("id");
+            var table = $("div[name='pub-nodes']")[0].table;
+            if (table.selected_rows.length == 1) {
+                var id = table.selected_rows[0].id;
                 window.location.href = `/pub/${uuid}/${id}/download`;
-            } else if (selected_row.length == 0) {
+            } else if (table.selected_rows.length == 0) {
                 alert("Unselect row.");
             } else {
                 alert("Selected too many.");
             }
             e.stopPropagation();
         });
-    });
-</script>
 
-{% if pub.allow_upload %}
-<script>
-    $(document).ready(function(){
-
+        /*
+         * Upload role actions.
+         * ============================================
+         */
         $("form[name='create-folder']").validate({
             rules: {
                 name: "required",
@@ -375,13 +378,12 @@
                 e.preventDefault();
                 return;
             }
-            var uuid = node_table.uuid;
-            var node_id = node_table.current_id();
+            var node_id = table_nav.current_id();
             $.post(`/api/pub/${uuid}/${node_id}`, 
                     $(this).serialize(), 
                     function(data) {
                         alert("Create folder success.");
-                        node_table.reload();
+                        table_nav.refresh();
                         $("div[name='pub-sidemenu']").jstree(true).refresh();   // bug.
                     }, "json"
             );
@@ -392,10 +394,10 @@
 
         // delete an node.
         $("button[role='delete']").on('click', function(){
-            var selected_row = $(".table-nodes > .table-nodes-body").children(".active");
-            if (selected_row.length == 1) {
-                var uuid = $(selected_row).attr("uuid");
-                var node_id = $(selected_row).attr("id");
+            var table = table_nav.table;
+            if (table.selected_rows.length == 1) {
+                var row = table.selected_rows[0];
+                var node_id = row.id;
                 if (confirm('Are you sure delete this node?')) {
                     $.ajax({
                         url: `/api/pub/${uuid}/${node_id}`,
@@ -403,12 +405,12 @@
                         dataType:"json",
                         success: function(data){
                             alert(data.msg);
-                            node_table.reload();
+                            table_nav.refresh();
                             $("div[name='pub-sidemenu']").jstree(true).refresh();   // bug.
                         }
                     });
                 }
-            } else if (selected_row.length == 0) {
+            } else if (table.selected_rows.length == 0) {
                 alert("Unselect row.");
             } else {
                 alert("Selected too many.");
@@ -417,13 +419,14 @@
 
         // rename an node.
         $("button[role='rename']").on('click', function(){
-            var selected_row = $(".table-nodes > .table-nodes-body").children(".active");
-            if (selected_row.length == 1) {
-                var name = $(selected_row).attr("name");
+            var table = table_nav.table;
+            var selected_rows = table.selected_rows;
+            if (selected_rows.length == 1) {
+                var name = selected_rows[0].name;
                 $(".modal[name='rename-node']").find("input[name='old_name']").val(name);
                 $(".modal[name='rename-node']").find("input[name='new_name']").val(name);
                 $(".modal[name='rename-node']").modal("show");
-            } else if (selected_row.length == 0) {
+            } else if (selected_rows.length == 0) {
                 alert("Unselect row.");
             } else {
                 alert("Selected too many.");
@@ -435,8 +438,7 @@
                 e.preventDefault();
                 return;
             }
-            var uuid = node_table.uuid;
-            var node_id = node_table.current_id();
+            var node_id = table_nav.current_id();
             $.ajax({
                     url: `/api/pub/${uuid}/${node_id}`,
                     type: "put",
@@ -444,7 +446,7 @@
                     dataType:"json",
                     success: function(data){
                         alert(data.msg);
-                        node_table.reload();
+                        table_nav.refresh();
                         $("div[name='pub-sidemenu']").jstree(true).refresh();   // bug.
                     }
             });
@@ -463,8 +465,7 @@
                 e.preventDefault();
                 return;
             }
-            var uuid = node_table.uuid;
-            var node_id = node_table.current_id();
+            var node_id = table_nav.current_id();
             var formdata = new FormData();
             formdata.append("file", $(this).find("input[name='file']")[0].files[0]);
             $.ajax({
@@ -475,7 +476,7 @@
                 data:   formdata,
                 success: function(data) {
                     alert("Upload file success.");
-                    node_table.reload();
+                    table_nav.refresh();
                     $("div[name='pub-sidemenu']").jstree(true).refresh();   // bug.
                 },
             });
@@ -484,12 +485,14 @@
             e.preventDefault();
             $(this)[0].reset();
         });
-        
+
         $("a[name='upload-folder']").on('click', function(){
             $(".modal[name='upload-folder']").modal('show');
         });
+
     });
 </script>
-{% endif %}
+
+
 
 {% endblock %}
