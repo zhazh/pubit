@@ -147,14 +147,13 @@ a, a:link, a:hover, a:visited, a:active {
 	border-bottom: 1px solid #bababa;
 }
 
-.breadcrumb {
+.main-content > .pub-main > .pub-path > ol.breadcrumb, div.breadcrumb {
 	padding: auto 15px;
 	margin: 0;
 	background-color:#eee;
 }
 
-.main-content > .pub-main > .collapse-toolbar {
-	display: none;
+.main-content > .pub-main > .pub-toolbar {
 	padding: 5px 15px;
 	font-size: 10px;
 	background-color:#eee;
@@ -165,64 +164,6 @@ a, a:link, a:hover, a:visited, a:active {
 	font-size: 14px;
 	flex-grow: 1;
 	overflow-y: scroll;
-}
-
-.main-content > .pub-main > .pub-nodes > .table-nodes {
-	width: 100%;
-	display: table;
-	border-collapse: collapse;
-}
-
-.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-head {
-	height: 30px;
-	line-height: 30px;
-	background-color: #eee;
-	display: table-header-group;
-}
-
-.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-body {
-	background-color: #fff;
-	display: table-row-group;
-
-	-webkit-user-select:none;
-	-moz-user-select:none;
-	-ms-user-select:none;
-	user-select:none;
-}
-
-.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-head > .table-nodes-row {
-	display: table-row;
-	border-bottom: 1px solid #bababa;
-}
-
-.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-head > .table-nodes-row > .table-nodes-col {
-	display: table-cell;
-	vertical-align: middle; 
-	padding-left: 15px;
-	border-right: 1px solid #ccc;
-}
-
-.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-body > .table-nodes-row {
-	display: table-row;
-	height: 30px;
-	border: 1px solid #fff;
-	cursor: default;
-}
-
-.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-body > .table-nodes-row:hover {
-	border: 1px solid #bbdefb;
-	background-color: #e3f2fd;
-}
-
-.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-body > .table-nodes-row.active {
-	border: 1px solid #bbdefb;
-	background-color: #90caf9;
-}
-
-.main-content > .pub-main > .pub-nodes > .table-nodes > .table-nodes-body > .table-nodes-row > .table-nodes-col {
-	display: table-cell;
-	vertical-align: middle; 
-	padding-left: 15px;
 }
 
 .modal[name=open-text] > .modal-dialog {

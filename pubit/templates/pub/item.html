@@ -99,7 +99,12 @@
                         <form name="upload-file" enctype='multipart/form-data'>
                             <div class="form-group">
                                 <label>File</label>
-                                <input name="file" type="file" class="form-control"/>
+                                <input name="file" type="file"/>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100" style="width: 10%;">
+                                    <span class="sr-only">60% Complete</span>
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-default">Upload</button>
                         </form>
@@ -180,7 +185,7 @@
         <div name="pub-path" class="pub-path">
             <!-- dynamic create path nav. -->
         </div>
-        <div class="collapse-toolbar">
+        <div class="pub-toolbar">
             <button class="btn btn-xs btn-default" role="download">Download</button>
             {% if pub.allow_upload %}
             <button class="btn btn-xs btn-default" role="delete">Delete</button>
@@ -211,14 +216,15 @@
         });
 
         var table_nav = new tableNav(
-                                uuid, 
-                                $("div[name='pub-nodes']")[0].table, 
-                                $("a[name='nav-back']"), 
-                                $("div[name='pub-path']")
+                                uuid,                                   // uuid.
+                                $("div[name='pub-nodes']")[0].table,    // table. 
+                                $("div[name='pub-sidemenu']"),          // tree.
+                                $("a[name='nav-back']"),                // button nav-back.
+                                $("div[name='pub-path']")               // pub path wrapper.
                         );
 
         $("div[name='pub-nodes']").on('select', function(e, table, selected_rows){
-            $("div.collapse-toolbar").slideDown();
+            // pass.
         });
 
         $("div[name='pub-nodes']").on('open', function(e, table, target_row){
@@ -263,11 +269,11 @@
                     'dataType': 'json', 
                     'url': function(node) {
                         // node attrs: id, text, icon, parent, parents,
-                        var node_id = node.id
+                        var node_id = node.id;
                         if (node_id === '#') {
-                            node_id = '|'
+                            node_id = '|';
                         }
-                        return `/api/pub/${uuid}/${node_id}/dir`
+                        return `/api/pub/${uuid}/${node_id}/dir`;
                     }
                 }
             }
@@ -296,6 +302,9 @@
                     },
                 },
             });
+
+            var search_content = $(this).children("input[name='keywords']").val();
+            $("div[name='pub-path']").html("<div class='breadcrumb'>In this pub search '" + search_content +"'</div>");
             return false;
         });
 
@@ -384,7 +393,6 @@
                     function(data) {
                         alert("Create folder success.");
                         table_nav.refresh();
-                        $("div[name='pub-sidemenu']").jstree(true).refresh();   // bug.
                     }, "json"
             );
             $(".modal[name='create-folder']").modal("hide");
@@ -406,7 +414,6 @@
                         success: function(data){
                             alert(data.msg);
                             table_nav.refresh();
-                            $("div[name='pub-sidemenu']").jstree(true).refresh();   // bug.
                         }
                     });
                 }
@@ -447,7 +454,6 @@
                     success: function(data){
                         alert(data.msg);
                         table_nav.refresh();
-                        $("div[name='pub-sidemenu']").jstree(true).refresh();   // bug.
                     }
             });
             
@@ -475,9 +481,11 @@
                 contentType: false,
                 data:   formdata,
                 success: function(data) {
-                    alert("Upload file success.");
+                    alert("Upload success.");
                     table_nav.refresh();
-                    $("div[name='pub-sidemenu']").jstree(true).refresh();   // bug.
+                },
+                error: function(xhr, textStatus, errorThrown) {
+                    alert("Upload failed.");
                 },
             });
             

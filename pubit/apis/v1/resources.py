@@ -216,7 +216,7 @@ class NodeAPI(MethodView):
             return RespServerWrong().jsonify
 
     def post(self, uuid, node_id):
-        """ Create new folder node.
+        """ Create new folder in this node.
         """
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
@@ -245,7 +245,7 @@ class NodeAPI(MethodView):
             return RespServerWrong().jsonify
     
     def put(self, uuid, node_id):
-        """ Modify an node name.
+        """ Modify the node's name.
         """
         try:
             pub = Pubitem.query.filter(Pubitem.uuid==uuid).first()
@@ -302,7 +302,7 @@ class NodeDirAPI(MethodView):
             node = pub.node(node_id)
             if not isinstance(node, DirectoryNode):
                 return RespArgumentWrong('Node', 'is not an directory').jsonify
-            node_desc = dict(id=node.id, text=node.name, data=dict(path=node.path), children=True)
+            node_desc = dict(id=node.id, text=node.name, state=dict(opened=True), data=dict(path=node.path), children=True)
             children_dir = list()
             for subnode in node.children():
                 if isinstance(subnode, DirectoryNode):

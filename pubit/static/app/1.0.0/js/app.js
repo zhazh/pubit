@@ -1,6 +1,12 @@
-var tableNav = function(uuid, table, btn_back, node_path_nav) {
+/*
+ * tableNav
+ * ==============================================
+ * tableNav class manage tree, table, and navgation path.
+ */
+var tableNav = function(uuid, table, tree, btn_back, node_path_nav) {
     this.uuid = uuid;
     this.table = table;
+    this.tree = tree;
     this.btn_back = btn_back;
     this.node_path_nav = node_path_nav;
 
@@ -47,6 +53,13 @@ tableNav.prototype.nav_go = function(id) {
             },
         },
     });
+
+    var tree = this.tree;
+    tree.jstree('open_node', id, function() {
+        tree.jstree('deselect_all', true);
+        tree.jstree('select_node', id, true);
+    });
+
     this.btn_back.attr('disabled', false);
 }
 
@@ -72,15 +85,12 @@ tableNav.prototype.nav_back = function() {
 
 tableNav.prototype.refresh = function() {
     var id = this.id_stack[this.id_stack.length - 1];   // id = id_stack.top();
-    this.table.load({
-        source: {
-            url:    `/api/pub/${this.uuid}/${id}`,
-            header: ['name', 'type', 'create', 'size'],
-            filter: function(data){
-                return data.children;
-            },
-        },
-    });
+    /* 
+     * Refresh node trigger 'changed.jstree' event,
+     * the event catch call nav_go() to load table,
+     * so don't need load table again.
+     */
+    this.tree.jstree('refresh_node', id, true);  
 }
 
 tableNav.prototype.current_id = function() {
