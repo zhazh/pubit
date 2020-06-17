@@ -112,9 +112,10 @@ class DirectoryNode(Node):
     
     def children(self):
         """ Return child node list.
+            2020/6/17 add filter to filter out file which starts with '.' or '$'.
         """
         child_list = list()
-        for _name in os.listdir(self.local_path):
+        for _name in [f for f in os.listdir(self.local_path) if f[0] not in ('.', '$')]:
             if self.path == '/':
                 path = '/' + _name
             else:
@@ -125,11 +126,17 @@ class DirectoryNode(Node):
 
     def search(self, keywords):
         """ Search keywords in this node, return matched nodes list.
+            2020/6/17 add filter to filter out file which starts with '.' or '$'.
         """
         node_list = list()
         _keywords = list(filter(lambda s:len(s)>0, keywords.split()))
         for root, dirs, files in os.walk(self.local_path):
-            for fname in files:
+            substrs = (os.sep + '.', os.sep + '$')
+            if root.find(substrs[0]) != -1:
+                continue
+            if root.find(substrs[1]) != -1:
+                continue
+            for fname in [f for f in files if f[0] not in ('.', '$')]:
                 for keyword in _keywords:
                     if fname.find(keyword) != -1:
                         f_local_path = os.path.join(root, fname)

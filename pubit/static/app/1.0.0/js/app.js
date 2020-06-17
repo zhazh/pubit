@@ -10,9 +10,10 @@ var tableNav = function(uuid, table, tree, btn_back, node_path_nav) {
     this.btn_back = btn_back;
     this.node_path_nav = node_path_nav;
 
+    var id = '|'
     this.id_stack = new Array();
-    this.id_stack.push('|');
-    this._update_nav_path('|');
+    this.id_stack.push(id);
+    this._update_nav_path(id);
     this.btn_back.attr('disabled', true);
 }
 
@@ -67,7 +68,7 @@ tableNav.prototype.nav_back = function() {
     if (this.id_stack.length > 1) {
         this.id_stack.pop();    // pop current page.
         var id = this.id_stack[this.id_stack.length - 1];   // id = id_stack.top()
-        this._update_nav_path(id);
+        this._update_nav_path(id); 
         this.table.load({
             source: {
                 url:    `/api/pub/${this.uuid}/${id}`,
@@ -77,6 +78,13 @@ tableNav.prototype.nav_back = function() {
                 },
             },
         });
+        
+        var tree = this.tree;
+        tree.jstree('open_node', id, function() {
+            tree.jstree('deselect_all', true);
+            tree.jstree('select_node', id, true);
+        });
+
         if (this.id_stack.length == 1) {
             this.btn_back.attr('disabled', true);
         }

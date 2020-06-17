@@ -26,7 +26,6 @@
                 </a>
                 <ul class="dropdown-menu">
                     <li><a name="upload-file" href="javascript:;">File</a></li>
-                    <li><a name="upload-folder" href="javascript:;">Folder</a></li>
                 </ul>
             </li>
             <li><a name="create-folder" href="javascript:;" class="btn btn-default">New folder</a></li>
@@ -101,31 +100,13 @@
                                 <label>File</label>
                                 <input name="file" type="file"/>
                             </div>
-                            <div class="progress">
-                                <div class="progress-bar" role="progressbar" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100" style="width: 10%;">
-                                    <span class="sr-only">60% Complete</span>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-default">Upload</button>
-                        </form>
-                    </div>
-                </div><!-- /.modal-content -->
-            </div><!-- /.modal-dialog -->
-        </div><!-- /.modal -->
-
-        <!-- upload folder modal-->
-        <div name="upload-folder" class="modal fade" tabindex="-1" role="dialog">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        <h5 class="modal-title">Upload folder.</h5>
-                    </div>
-                    <div class="modal-body">
-                        <form name="upload-folder" enctype='multipart/form-data'>
                             <div class="form-group">
-                                <label>Local directory</label>
-                                <input name="dir" type="file" class="form-control" webkitdirectory directory multiple/>
+                                <label name="progress-text" class="text-info"></label>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">
+                                    <span class="sr-only">60%</span>
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-default">Upload</button>
                         </form>
@@ -215,14 +196,6 @@
             },
         });
 
-        var table_nav = new tableNav(
-                                uuid,                                   // uuid.
-                                $("div[name='pub-nodes']")[0].table,    // table. 
-                                $("div[name='pub-sidemenu']"),          // tree.
-                                $("a[name='nav-back']"),                // button nav-back.
-                                $("div[name='pub-path']")               // pub path wrapper.
-                        );
-
         $("div[name='pub-nodes']").on('select', function(e, table, selected_rows){
             // pass.
         });
@@ -285,11 +258,19 @@
             table_nav.nav_go(id);
         });
 
+        var table_nav = new tableNav(
+                                uuid,                                   // uuid.
+                                $("div[name='pub-nodes']")[0].table,    // table. 
+                                $("div[name='pub-sidemenu']"),          // tree.
+                                $("a[name='nav-back']"),                // button nav-back.
+                                $("div[name='pub-path']")               // pub path wrapper.
+                        );
+
         // search files in this pub.
         $("form[name='pub-search']").on("submit", function(e){
             var table = $("div[name='pub-nodes']")[0].table;
             table.load({
-                loading_timeout: 15,
+                loading_timeout: 30,
                 source: {
                     url:    `/api/pub/${uuid}/|/search`,
                     data:   $(this).serialize(),
@@ -312,7 +293,6 @@
         $("div.pub-main").on("click", "a[name='path-link']", function(e){
             var id = $(this).attr('id');
             table_nav.nav_go(id);
-            e.stopPropagation();
         });
         
         // To navgation back.
@@ -481,23 +461,33 @@
                 contentType: false,
                 data:   formdata,
                 success: function(data) {
-                    alert("Upload success.");
+                    $("div[name='upload-file']").find("label[name='progress-text']").html('Upload complete.');
                     table_nav.refresh();
                 },
                 error: function(xhr, textStatus, errorThrown) {
-                    alert("Upload failed.");
+                    $("div[name='upload-file']").find("label[name='progress-text']").html('Upload failed.');
                 },
-            });
-            
-            $(".modal[name='upload-file']").modal("hide");
+                xhr: function() {
+                    var xhr = $.ajaxSettings.xhr();
+                    if (xhr.upload) {
+                        xhr.upload.addEventListener("progress", function(evt){
+                            var loaded = evt.loaded;
+                            var total = evt.total;
+                            var per = Math.floor(100 * loaded / total) + '%';
+                            $("div[name='upload-file']").find("div[role='progressbar']").css({width: per});
+                        }, false);
+                    }
+                    return xhr;
+                }
+            }); 
             e.preventDefault();
-            $(this)[0].reset();
         });
 
-        $("a[name='upload-folder']").on('click', function(){
-            $(".modal[name='upload-folder']").modal('show');
+        $(".modal[name='upload-file']").on("hide.bs.modal", function(e){
+            $("div[name='upload-file']").find("label[name='progress-text']").html('');
+            $("div[name='upload-file']").find("div[role='progressbar']").css({width: '0%'});
+            $("form[name='upload-file']")[0].reset();
         });
-
     });
 </script>
 
