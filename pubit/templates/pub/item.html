@@ -183,9 +183,10 @@
 
 {% block script %}
 <script>
-    $(document).ready(function(){
-        var uuid = "{{pub.uuid}}";
+    var uuid = "{{pub.uuid}}";
 
+    $(document).ready(function(){
+        
         $("div[name='pub-nodes']").jstable({
             source: {
                 url:    `/api/pub/${uuid}/|`,

@@ -119,6 +119,8 @@
                 return;
             }
             this.clear();
+            this.rows.length = 0;
+            this.selected_rows.length = 0;
             this.loading();
             $.ajax({
                 async:   true,

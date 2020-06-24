@@ -11,5 +11,22 @@
 {% endblock %}
 
 {% block main %}
-Show all public resources.
+<table class="table">
+    <thead>
+        <tr>
+            <td>Pub time</td>
+            <td>Name</td>
+            <td>Description</td>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pub in pubs %}
+        <tr>
+            <td>{{pub.standard_pubtime}}</td>
+            <td><a href="{{url_for('pub.item', uuid=pub.uuid)}}">{{pub.name}}</a></td>
+            <td>{{pub.description}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endblock%}

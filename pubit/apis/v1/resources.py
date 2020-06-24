@@ -302,7 +302,10 @@ class NodeDirAPI(MethodView):
             node = pub.node(node_id)
             if not isinstance(node, DirectoryNode):
                 return RespArgumentWrong('Node', 'is not an directory').jsonify
-            node_desc = dict(id=node.id, text=node.name, state=dict(opened=True), data=dict(path=node.path), children=True)
+            if node_id == '|':
+                node_desc = dict(id=node.id, text=node.name, state=dict(opened=True, selected=True), data=dict(path=node.path), children=True)
+            else:
+                node_desc = dict(id=node.id, text=node.name, state=dict(opened=True), data=dict(path=node.path), children=True)
             children_dir = list()
             for subnode in node.children():
                 if isinstance(subnode, DirectoryNode):
